@@ -91,6 +91,10 @@
   .back{background:none;border:0;color:var(--muted);font:inherit;padding:0 0 10px;cursor:pointer}
   .score{font-size:34px;font-weight:700;color:var(--accent)}
   .empty{color:var(--muted);padding:24px 0;text-align:center}
+  .check{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .check:last-of-type{border-bottom:0}
+  .check input{width:19px;height:19px;accent-color:#7fc9a1;flex:0 0 auto}
+  .check span.done{color:var(--muted);text-decoration:line-through}
 </style>
 </head>
 <body>
@@ -110,7 +114,7 @@
 <script>
 /* ---------- хранилище ---------- */
 const KEY = 'en_app_v1';
-const blank = { done:{}, errors:[], log:{}, answers:{} };
+const blank = { done:{}, errors:[], log:{}, answers:{}, hw:{} };
 let S = load();
 function load(){
   try { return Object.assign({}, blank, JSON.parse(localStorage.getItem(KEY) || '{}')); }
@@ -252,6 +256,7 @@ function renderLesson(id){
 
   html += '<h2>Упражнения</h2><p class="muted small">Пиши полностью, без сокращений. Проверка не строгая к регистру, но строгая к словам.</p>';
   html += '<div id="exWrap"></div>';
+  html += '<div id="hwWrap"></div>';
   html += '<div id="lessonEnd"></div>';
   $('#view').innerHTML = html;
 
@@ -259,6 +264,9 @@ function renderLesson(id){
   l.exercises.forEach((ex, i) => {
     wrap.appendChild(exCard(ex, (ok, given, correct) => record(l.id, 'u' + i, ok, ex, given, correct)));
   });
+
+  $('#hwWrap').innerHTML = hwBlock(l);
+  wireHw(l);
 
   const st = lessonScore(l.id);
   if (st && st.total >= l.exercises.length){
@@ -334,6 +342,56 @@ function record(lessonId, key, ok, ex, given, correct){
 function refreshStreak(){
   const st = streak();
   $('#hStreak').innerHTML = st ? 'серия <b>' + st + '</b> дн.' : 'начни сегодня';
+}
+
+/* ---------- домашка по Murphy ---------- */
+function hwBlock(l){
+  const n = l.unit;
+  const pages = (2*n) + '–' + (2*n + 1);
+  const total = EXCOUNT[String(n)];
+  const done = (S.hw && S.hw[l.id]) || {};
+
+  let html = '<h2>Домашка по Murphy</h2><div class="card">' +
+    '<div class="row"><div><b>Unit ' + n + '</b>' +
+    '<div class="muted small">страницы ' + pages + ' в 4-м издании</div></div>' +
+    '<span class="badge" id="hwCount"></span></div>';
+
+  if (total){
+    html += '<p class="muted small" style="margin:10px 0 4px">Упражнения ' + n + '.1 – ' + n + '.' + total +
+      '. Текст в книге, здесь только отметки.</p>';
+    for (let k = 1; k <= total; k++){
+      const on = !!done[k];
+      html += '<label class="check"><input type="checkbox" data-ex="' + k + '"' + (on ? ' checked' : '') + '>' +
+        '<span class="' + (on ? 'done' : '') + '">Упражнение ' + n + '.' + k + '</span></label>';
+    }
+  } else {
+    html += '<p class="muted small">Номера упражнений этого юнита не разобраны — сделай те, что на странице ' + (2*n + 1) + '.</p>';
+  }
+  return html + '</div>';
+}
+
+function wireHw(l){
+  const boxes = Array.from(document.querySelectorAll('#hwWrap input[type=checkbox]'));
+  const total = boxes.length;
+  const upd = () => {
+    const done = boxes.filter(b => b.checked).length;
+    const el = document.getElementById('hwCount');
+    if (!el) return;
+    el.textContent = total ? done + ' из ' + total : '';
+    el.className = 'badge' + (total && done === total ? ' ok' : '');
+  };
+  boxes.forEach(b => {
+    b.addEventListener('change', () => {
+      if (!S.hw[l.id]) S.hw[l.id] = {};
+      if (b.checked) S.hw[l.id][b.dataset.ex] = true;
+      else delete S.hw[l.id][b.dataset.ex];
+      const label = b.parentElement.querySelector('span');
+      if (label) label.classList.toggle('done', b.checked);
+      save();
+      upd();
+    });
+  });
+  upd();
 }
 
 function renderDict(){
