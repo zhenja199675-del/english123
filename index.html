@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>English A0 → A2</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1e222b; --line:#2a2f3a;
+    --text:#e7e9ee; --muted:#98a1b0; --accent:#7fc9a1; --bad:#e2675f; --warn:#e8c06b;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-text-size-adjust:100%}
+  body{padding-bottom:74px}
+  a{color:var(--accent);text-decoration:none}
+  header{position:sticky;top:0;z-index:10;background:rgba(15,17,21,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+    padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header .title{font-weight:600;letter-spacing:.2px}
+  header .streak{font-size:13px;color:var(--muted);white-space:nowrap}
+  header .streak b{color:var(--accent)}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;
+    background:rgba(23,26,33,.97);border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;
+    padding:10px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+  nav button.on{color:var(--accent)}
+  nav .ic{font-size:15px;line-height:1}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:17px;margin:22px 0 8px}
+  h3{font-size:15px;margin:18px 0 6px;color:var(--muted);font-weight:600;
+     text-transform:uppercase;letter-spacing:.06em}
+  p{margin:8px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+  .card.tap{display:block;color:inherit;cursor:pointer}
+  .card.tap:active{background:var(--card2)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .badge{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .badge.ok{color:var(--accent);border-color:#2e4a3a;background:#152018}
+  .bar{height:6px;border-radius:99px;background:var(--card2);overflow:hidden;margin-top:10px}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:99px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:12px 0}
+  .ex .q{margin:0 0 10px;font-size:16px}
+  .ex .q b{color:var(--warn);font-weight:600}
+  input[type=text]{width:100%;background:#0d1014;border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:11px 12px;font:inherit;font-size:16px}
+  input[type=text]:focus{outline:none;border-color:#3c4a5c}
+  .btn{display:inline-block;border:1px solid var(--line);background:var(--card2);color:var(--text);
+    border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:#1d3327;border-color:#2e4a3a;color:#d6f2e2}
+  .btn.ghost{background:none}
+  .btn.full{display:block;width:100%;text-align:center;margin-top:10px}
+  .opts{display:grid;gap:8px}
+  .opt{border:1px solid var(--line);background:#0d1014;border-radius:10px;padding:11px 12px;
+    color:var(--text);font:inherit;text-align:left;cursor:pointer}
+  .opt.sel{border-color:#3c4a5c;background:#151a22}
+  .opt.good{border-color:#2e4a3a;background:#152018}
+  .opt.bad{border-color:#4a2e2e;background:#201414}
+  .fb{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#152018;border:1px solid #2e4a3a;color:#c9ecd8}
+  .fb.no{background:#201414;border:1px solid #4a2e2e;color:#f0ccc9}
+  .fb .corr{font-weight:600}
+  .word{border-bottom:1px solid var(--line);padding:11px 0}
+  .word:last-child{border-bottom:0}
+  .word .w{font-weight:600}
+  .word .tr{color:var(--muted);font-size:13px}
+  .word .ex2{font-size:14px;margin-top:3px}
+  .grid14{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+  .day{aspect-ratio:1/1;border-radius:8px;background:var(--card2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+  .day.on{background:#1d3327;border-color:#2e4a3a;color:#bfe6cf}
+  .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .kpi div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+  .kpi b{display:block;font-size:19px}
+  .kpi span{font-size:11px;color:var(--muted)}
+  .back{background:none;border:0;color:var(--muted);font:inherit;padding:0 0 10px;cursor:pointer}
+  .score{font-size:34px;font-weight:700;color:var(--accent)}
+  .empty{color:var(--muted);padding:24px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="title" id="hTitle">English</div>
+  <div class="streak" id="hStreak"></div>
+</header>
+<main id="view"></main>
+<nav id="nav">
+  <button data-go="course"><span class="ic">☰</span>Курс</button>
+  <button data-go="dict"><span class="ic">A</span>Словарь</button>
+  <button data-go="errors"><span class="ic">!</span>Ошибки</button>
+  <button data-go="progress"><span class="ic">↗</span>Прогресс</button>
+</nav>
+
+<script src="data.js"></script>
+<script>
+/* ---------- хранилище ---------- */
+const KEY = 'en_app_v1';
+const blank = { done:{}, errors:[], log:{}, answers:{} };
+let S = load();
+function load(){
+  try { return Object.assign({}, blank, JSON.parse(localStorage.getItem(KEY) || '{}')); }
+  catch(e){ return JSON.parse(JSON.stringify(blank)); }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function dayKey(d){
+  const x = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return x.toISOString().slice(0,10);
+}
+function today(){ return dayKey(new Date()); }
+function markDay(){ const d = today(); S.log[d] = (S.log[d] || 0) + 1; save(); }
+function streak(){
+  let n = 0;
+  const d = new Date();
+  if (!S.log[today()]) d.setDate(d.getDate()-1);
+  for(;;){
+    if (!S.log[dayKey(d)]) break;
+    n++;
+    d.setDate(d.getDate()-1);
+    if (n > 400) break;
+  }
+  return n;
+}
+
+/* ---------- утилиты ---------- */
+const $ = s => document.querySelector(s);
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function norm(s){
+  return String(s).toLowerCase()
+    .replace(/[’`]/g,"'")
+    .replace(/[.,!?;:«»"]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function lessonById(id){ return LESSONS.find(l => l.id === id); }
+function allWords(){
+  const seen = new Set(), out = [];
+  LESSONS.forEach(l => (l.words||[]).forEach(w => {
+    if (seen.has(w.w)) return; seen.add(w.w); out.push(Object.assign({lesson:l.title}, w));
+  }));
+  return out;
+}
+function lessonScore(id){
+  const a = S.answers[id]; if(!a) return null;
+  const total = Object.keys(a).length, ok = Object.values(a).filter(Boolean).length;
+  return { total, ok, pct: total ? Math.round(ok*100/total) : 0 };
+}
+
+/* ---------- маршрутизация ---------- */
+function go(view, param){
+  location.hash = param ? view + '/' + param : view;
+}
+window.addEventListener('hashchange', route);
+function route(){
+  const parts = location.hash.replace(/^#/, '').split('/').filter(Boolean);
+  const view = parts[0] || 'course';
+  const param = parts[1];
+  render(view, param);
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === view));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+
+function header(title){
+  $('#hTitle').textContent = title;
+  const st = streak();
+  $('#hStreak').innerHTML = st ? 'серия <b>' + st + '</b> дн.' : 'начни сегодня';
+}
+
+/* ---------- экраны ---------- */
+function render(view, param){
+  if (view === 'lesson') return renderLesson(param);
+  if (view === 'dict') return renderDict();
+  if (view === 'errors') return renderErrors();
+  if (view === 'progress') return renderProgress();
+  if (view === 'test') return renderTest(param);
+  return renderCourse();
+}
+
+function renderCourse(){
+  header('Курс');
+  let done = 0, all = 0;
+  LESSONS.forEach(l => { all++; if (S.done[l.id]) done++; });
+  let html = '<h1>Английский с нуля</h1><p class="muted small">' +
+    'Грамматика по юнитам Murphy, слова и практика — здесь. ' + done + ' из ' + all + ' уроков пройдено.</p>';
+
+  BLOCKS.forEach(b => {
+    const ls = LESSONS.filter(l => l.block === b.id);
+    const okc = ls.filter(l => S.done[l.id]).length;
+    const pct = ls.length ? Math.round(okc*100/ls.length) : 0;
+    html += '<div class="card"><div class="row"><div><b>' + esc(b.title) + '</b>' +
+      '<div class="muted small">' + esc(b.weeks) + ' · ' + esc(b.units) + '</div></div>' +
+      '<span class="badge' + (okc===ls.length&&ls.length?' ok':'') + '">' + okc + '/' + ls.length + '</span></div>' +
+      '<div class="muted small" style="margin-top:8px">' + esc(b.goal) + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
+
+    if (ls.length){
+      html += '<h3>Уроки</h3>';
+      ls.forEach(l => {
+        const sc = lessonScore(l.id);
+        const right = S.done[l.id] ? '<span class="badge ok">пройден' + (sc ? ', ' + sc.pct + '%' : '') + '</span>'
+                                   : (sc ? '<span class="badge">' + sc.pct + '%</span>' : '');
+        html += '<a class="card tap" href="#lesson/' + l.id + '"><div class="row">' +
+          '<div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+          '<div class="muted small">' + esc(l.subtitle) + '</div></div>' + right + '</div></a>';
+      });
+      html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
+    } else {
+      html += '<div class="muted small" style="margin-top:8px">Уроки появятся, когда дойдём до блока.</div>';
+    }
+  });
+  $('#view').innerHTML = html;
+}
+
+function renderLesson(id){
+  const l = lessonById(id);
+  if (!l) { go('course'); return; }
+  header('Unit ' + l.unit);
+  let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
+  html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>';
+
+  l.theory.forEach(t => {
+    if (t.h) html += '<h2>' + esc(t.h) + '</h2>';
+    if (t.p) html += '<p>' + t.p + '</p>';
+    if (t.table){
+      html += '<table><thead><tr>' + t.table[0].map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+        t.table.slice(1).map(r => '<tr>' + r.map(c => '<td>' + c + '</td>').join('') + '</tr>').join('') +
+        '</tbody></table>';
+    }
+  });
+
+  html += '<h3>Слова урока</h3><div class="card">' + l.words.map(w =>
+    '<div class="word"><div class="row"><span class="w">' + esc(w.w) + '</span><span class="tr">' + esc(w.tr) + '</span></div>' +
+    '<div>' + esc(w.ru) + '</div><div class="ex2 muted">' + esc(w.ex) + ' — ' + esc(w.exRu) + '</div></div>').join('') + '</div>';
+
+  html += '<h3>Примеры</h3><div class="card">' + l.examples.map(e =>
+    '<div class="word"><div>' + esc(e.en) + '</div><div class="ex2 muted">' + esc(e.ru) + '</div></div>').join('') + '</div>';
+
+  html += '<h2>Упражнения</h2><p class="muted small">Пиши полностью, без сокращений. Проверка не строгая к регистру, но строгая к словам.</p>';
+  html += '<div id="exWrap"></div>';
+  html += '<div id="lessonEnd"></div>';
+  $('#view').innerHTML = html;
+
+  const wrap = $('#exWrap');
+  l.exercises.forEach((ex, i) => {
+    wrap.appendChild(exCard(ex, (ok, given, correct) => record(l.id, 'u' + i, ok, ex, given, correct)));
+  });
+
+  const st = lessonScore(l.id);
+  if (st && st.total >= l.exercises.length){
+    $('#lessonEnd').innerHTML = '<div class="card"><b>Урок пройден: ' + st.pct + '%</b>' +
+      '<p class="muted small">Можно вернуться завтра и пройти заново — вопросы те же.</p></div>';
+  }
+}
+
+function exCard(ex, onAnswer){
+  const div = document.createElement('div');
+  div.className = 'ex';
+  div.innerHTML = '<p class="q">' + esc(ex.q) + '</p>';
+
+  if (ex.type === 'choice'){
+    div.innerHTML += '<div class="opts">' +
+      ex.opts.map((o, i) => '<button class="opt" data-i="' + i + '">' + esc(o) + '</button>').join('') +
+      '</div><div class="fb"></div>';
+    div.querySelectorAll('.opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = Number(btn.dataset.i), right = i === ex.answer;
+        div.querySelectorAll('.opt').forEach(b => b.classList.remove('sel'));
+        btn.classList.add(right ? 'good' : 'bad');
+        if (!right) div.querySelectorAll('.opt')[ex.answer].classList.add('good');
+        showFb(div, right, ex.opts[ex.answer], ex.explain);
+        onAnswer(right, ex.opts[i], ex.opts[ex.answer]);
+      });
+    });
+    return div;
+  }
+
+  div.innerHTML += '<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ответ по-английски">' +
+    '<div class="row" style="margin-top:8px"><button class="btn primary">Проверить</button></div><div class="fb"></div>';
+  const inp = div.querySelector('input');
+  const check = () => {
+    const val = inp.value.trim();
+    if (!val) return;
+    const ok = ex.answers.some(a => norm(a) === norm(val));
+    inp.style.borderColor = ok ? '#2e4a3a' : '#4a2e2e';
+    showFb(div, ok, ex.answers[0], ex.explain);
+    onAnswer(ok, val, ex.answers[0]);
+  };
+  div.querySelector('.btn').addEventListener('click', check);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  return div;
+}
+
+function showFb(div, ok, correct, explain){
+  const fb = div.querySelector('.fb');
+  fb.className = 'fb show ' + (ok ? 'ok' : 'no');
+  fb.innerHTML = ok
+    ? '<b>Верно.</b> ' + esc(explain || '')
+    : 'Не так. Правильно: <span class="corr">' + esc(cap(correct)) + '</span><br>' + esc(explain || '');
+}
+function cap(s){ return s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : s; }
+
+function record(lessonId, key, ok, ex, given, correct){
+  if (!S.answers[lessonId]) S.answers[lessonId] = {};
+  S.answers[lessonId][key] = ok;
+  if (!ok){
+    const dup = S.errors.some(e => e.q === ex.q && e.date === today());
+    if (!dup) S.errors.unshift({ date: today(), lesson: lessonId, q: ex.q, given, correct });
+  }
+  markDay();
+  const l = lessonById(lessonId);
+  if (l){
+    const answered = Object.keys(S.answers[lessonId]).length;
+    if (answered >= l.exercises.length) S.done[lessonId] = { date: today() };
+  }
+  save();
+  refreshStreak();
+}
+
+function refreshStreak(){
+  const st = streak();
+  $('#hStreak').innerHTML = st ? 'серия <b>' + st + '</b> дн.' : 'начни сегодня';
+}
+
+function renderDict(){
+  header('Словарь');
+  const words = allWords();
+  let html = '<h1>Словарь</h1><p class="muted small">' + words.length + ' слов из уроков. Anki ведёшь отдельно, здесь просто справочник.</p>';
+  html += '<input type="text" id="q" placeholder="поиск: слово или перевод" style="margin-bottom:6px">';
+  html += '<div class="card" id="list">' + words.map(w =>
+    '<div class="word" data-s="' + esc((w.w + ' ' + w.ru + ' ' + w.ex).toLowerCase()) + '">' +
+    '<div class="row"><span class="w">' + esc(w.w) + '</span><span class="tr">' + esc(w.tr) + '</span></div>' +
+    '<div>' + esc(w.ru) + '</div><div class="ex2 muted">' + esc(w.ex) + ' — ' + esc(w.exRu) + '</div></div>').join('') + '</div>';
+  $('#view').innerHTML = html;
+  $('#q').addEventListener('input', e => {
+    const v = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('#list .word').forEach(el => {
+      el.style.display = !v || el.dataset.s.includes(v) ? '' : 'none';
+    });
+  });
+}
+
+function renderErrors(){
+  header('Ошибки');
+  let html = '<h1>Ошибки</h1>';
+  if (!S.errors.length){
+    html += '<div class="empty">Пока пусто. Ошибки появятся здесь, когда начнёшь упражнения.</div>';
+  } else {
+    html += '<p class="muted small">' + S.errors.length + ' записей. Раз в неделю пробегай глазами.</p>';
+    html += S.errors.map(e => '<div class="card"><div class="muted small">' + e.date + '</div>' +
+      '<div style="margin-top:4px">' + esc(e.q) + '</div>' +
+      '<div style="margin-top:6px">Ты: <span style="color:var(--bad)">' + esc(e.given) + '</span></div>' +
+      '<div>Верно: <span style="color:var(--accent)">' + esc(cap(e.correct)) + '</span></div></div>').join('');
+    html += '<button class="btn ghost full" onclick="clearErrors()">Очистить журнал</button>';
+  }
+  $('#view').innerHTML = html;
+}
+function clearErrors(){
+  if (!confirm('Удалить все записи об ошибках?')) return;
+  S.errors = []; save(); renderErrors();
+}
+
+function renderProgress(){
+  header('Прогресс');
+  const days = Object.keys(S.log).sort();
+  let answered = 0, right = 0;
+  Object.values(S.answers).forEach(o => Object.values(o).forEach(v => { answered++; if (v) right++; }));
+  const doneLessons = Object.keys(S.done).length;
+  const acc = answered ? Math.round(right*100/answered) : 0;
+
+  let html = '<h1>Прогресс</h1><div class="kpi">' +
+    '<div><b>' + streak() + '</b><span>дней подряд</span></div>' +
+    '<div><b>' + doneLessons + '</b><span>уроков</span></div>' +
+    '<div><b>' + acc + '%</b><span>верных</span></div></div>';
+
+  html += '<h2>Последние 14 дней</h2><div class="grid14">';
+  for (let i = 13; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    html += '<div class="day' + (S.log[k] ? ' on' : '') + '">' + d.getDate() + '</div>';
+  }
+  html += '</div>';
+
+  html += '<h2>Уроки</h2>';
+  LESSONS.forEach(l => {
+    const sc = lessonScore(l.id);
+    html += '<div class="card"><div class="row"><div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+      '<div class="muted small">' + (sc ? sc.ok + ' из ' + sc.total + ' верно' : 'не начат') + '</div></div>' +
+      (S.done[l.id] ? '<span class="badge ok">пройден</span>' : '') + '</div></div>';
+  });
+
+  if (days.length) html += '<p class="muted small">Занятий всего: ' + days.length + '. Верных ответов: ' + right + ' из ' + answered + '.</p>';
+  $('#view').innerHTML = html;
+}
+
+/* ---------- тест ---------- */
+function renderTest(blockId){
+  const lessons = LESSONS.filter(l => l.block === blockId);
+  if (!lessons.length){ go('course'); return; }
+  header('Тест');
+  let pool = [];
+  lessons.forEach(l => l.exercises.forEach(ex => pool.push({ ex, lesson:l })));
+  pool = pool.sort(() => Math.random() - .5).slice(0, TEST_SIZE);
+
+  let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>' +
+    '<h1>Тест по блоку</h1><p class="muted small">' + pool.length + ' вопросов. Без подсказок, правила не подглядывай.</p>' +
+    '<div class="row"><span class="muted small" id="tProg">0 из ' + pool.length + '</span>' +
+    '<span class="muted small" id="tAcc"></span></div>' +
+    '<div id="exWrap"></div><div id="testEnd"></div>';
+  $('#view').innerHTML = html;
+  const wrap = $('#exWrap');
+  let right = 0, answered = 0;
+
+  pool.forEach(item => {
+    wrap.appendChild(exCard(item.ex, (ok, given, correct) => {
+      answered++; if (ok) right++;
+      $('#tProg').textContent = answered + ' из ' + pool.length;
+      $('#tAcc').textContent = answered ? Math.round(right*100/answered) + '%' : '';
+      if (!ok){
+        const dup = S.errors.some(e => e.q === item.ex.q && e.date === today());
+        if (!dup) S.errors.unshift({ date: today(), lesson: item.lesson.id, q: item.ex.q, given, correct });
+      }
+      markDay(); save(); refreshStreak();
+      if (answered === pool.length){
+        const pct = Math.round(right*100/pool.length);
+        $('#testEnd').innerHTML = '<div class="card"><div class="muted small">Результат</div>' +
+          '<div class="score">' + pct + '%</div><div>' + right + ' из ' + pool.length + ' верно</div>' +
+          '<p class="muted small">' + (pct >= 80
+            ? 'Блок можно считать пройденным.'
+            : pct >= 50
+              ? 'Половина сидит. Повтори слабые уроки и пройди ещё раз.'
+              : 'Рано. Возвращайся в уроки, тест пока не про тебя.') + '</p>' +
+          '<button class="btn full" onclick="renderTest(\'' + blockId + '\')">Пройти заново</button></div>';
+      }
+    }));
+  });
+}
+
+/* ---------- офлайн ---------- */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* старт */
+route();
+</script>
+</body>
+</html>
