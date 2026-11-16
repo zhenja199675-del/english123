@@ -52,41 +52,40 @@ const BLOCKS = [
 ];
 
 const LESSONS = [
+  /* ===== Unit 1 ===== */
   {
     id: "u1",
     block: "b1",
     unit: 1,
     title: "am / is / are",
     subtitle: "Я студент, ты учитель",
-    theory: [
+    murphy: { pages: "2–3", exPage: "3", theory: "murphy/u1-2.jpg", ex: "murphy/u1-3.jpg", key: ["murphy/key-a.jpg", "murphy/key-b.jpg"] },
+    sections: [
       {
-        h: "Зачем нужен глагол-связка",
-        p: "По-русски: «Я студент». Два слова. По-английски между ними обязательно стоит глагол: <b>I am a student</b>. Это как старое русское «аз есмь студент». Без него английская фраза разваливается."
-      },
-      {
-        h: "Три формы",
+        h: "A. Утверждение",
+        p: "В русском «Я студент» — два слова. В английском между ними обязательно стоит глагол: <b>I am a student</b>. Смысла он почти не добавляет, но без него фраза разваливается.",
         table: [
           ["Кто", "Форма", "Пример"],
           ["I — я", "am", "I am a student. — Я студент."],
-          ["you — ты, вы", "are", "You are a teacher. — Ты учитель."],
-          ["we — мы", "are", "We are from Russia. — Мы из России."],
-          ["they — они", "are", "They are students. — Они студенты."],
           ["he — он", "is", "He is my friend. — Он мой друг."],
-          ["she — она", "is", "She is a doctor. — Она врач."],
-          ["it — оно", "is", "It is cold. — Холодно."]
+          ["she — она", "is", "She is a teacher. — Она учитель."],
+          ["it — оно", "is", "It is cold. — Холодно."],
+          ["you — ты, вы", "are", "You are from Russia. — Ты из России."],
+          ["we — мы", "are", "We are students. — Мы студенты."],
+          ["they — они", "are", "They are friends. — Они друзья."]
         ]
       },
       {
-        h: "Короткие формы",
-        p: "В речи и в переписке почти всегда сокращают: <b>I'm</b>, <b>you're</b>, <b>he's</b>, <b>she's</b>, <b>it's</b>, <b>we're</b>, <b>they're</b>. На письме в упражнениях лучше писать полную форму, пока не запомнилось."
+        h: "B. Короткие формы",
+        p: "В речи и переписке глагол почти всегда сжимается: <b>I'm</b>, <b>he's</b>, <b>she's</b>, <b>it's</b>, <b>you're</b>, <b>we're</b>, <b>they're</b>. На письме в упражнениях пиши полную форму, пока не запомнилось."
       },
       {
-        h: "Артикль a",
-        p: "Перед одним предметом или профессией нужен <b>a</b>: I am <b>a</b> student. В русском артикля нет, поэтому рука его пропускает. Правило-костыль: если по-русски можно вставить «один, какой-то» — ставь a."
+        h: "C. Отрицание",
+        p: "Просто <b>not</b> после глагола: I am <b>not</b> a teacher. He <b>isn't</b> a student. They <b>aren't</b> here. Сокращения: isn't, aren't, а с I — I'm not."
       },
       {
-        h: "Отрицание",
-        p: "Просто <b>not</b> после глагола: I am <b>not</b> a teacher. He <b>isn't</b> a student. They <b>aren't</b> here."
+        h: "Доп. от меня: артикль a",
+        p: "Перед одним предметом или профессией нужен <b>a</b>: I am <b>a</b> student. В русском артикля нет, поэтому рука его пропускает. Костыль: если по-русски влезает «один, какой-то» — ставь a."
       }
     ],
     words: [
@@ -103,34 +102,87 @@ const LESSONS = [
       { en: "We are friends.", ru: "Мы друзья." },
       { en: "She is not a teacher.", ru: "Она не учитель." }
     ],
+    homework: [
+      {
+        id: "1.1",
+        task: "Напиши краткую форму",
+        items: [
+          { q: "she is", a: ["she's"] },
+          { q: "they are", a: ["they're"] },
+          { q: "it is not", a: ["it isn't", "it's not"] },
+          { q: "that is", a: ["that's"] },
+          { q: "I am not", a: ["i'm not"] },
+          { q: "you are not", a: ["you aren't", "you're not"] }
+        ]
+      },
+      {
+        id: "1.2",
+        task: "Вставь am, is или are",
+        items: [
+          { q: "I ___ from Russia.", a: ["am"] },
+          { q: "The weather ___ nice today.", a: ["is"] },
+          { q: "My brother and I ___ students.", a: ["are"] },
+          { q: "This bag ___ heavy.", a: ["is"] },
+          { q: "They ___ my friends.", a: ["are"] },
+          { q: "Emily ___ at home.", a: ["is"] },
+          { q: "You ___ a good teacher.", a: ["are"] },
+          { q: "I ___ not hungry.", a: ["am"] }
+        ]
+      },
+      {
+        id: "1.3",
+        task: "Сделай отрицание",
+        items: [
+          { q: "I am a teacher. →", a: ["i am not a teacher", "i'm not a teacher"] },
+          { q: "He is from Italy. →", a: ["he is not from italy", "he isn't from italy", "he's not from italy"] },
+          { q: "We are late. →", a: ["we are not late", "we aren't late", "we're not late"] },
+          { q: "They are students. →", a: ["they are not students", "they aren't students", "they're not students"] },
+          { q: "It is cold today. →", a: ["it is not cold today", "it isn't cold today", "it's not cold today"] }
+        ]
+      },
+      {
+        id: "1.4",
+        task: "Напиши о себе",
+        items: [
+          { q: "Я студент. (I ___ ...)", a: ["i am a student", "i'm a student"], sample: "I am a student." },
+          { q: "Я из России. (I ___ ...)", a: ["i am from russia", "i'm from russia"], sample: "I am from Russia." },
+          { q: "Я не учитель. (I ___ ...)", a: ["i am not a teacher", "i'm not a teacher"], sample: "I am not a teacher." }
+        ]
+      }
+    ],
     exercises: [
-      { type: "fill", q: "I ___ a student.", answers: ["am"], explain: "С «I» всегда am." },
-      { type: "fill", q: "She ___ my friend.", answers: ["is"], explain: "he / she / it — is." },
-      { type: "fill", q: "We ___ from Russia.", answers: ["are"], explain: "we / you / they — are." },
-      { type: "translate", q: "Он не учитель.", answers: ["he is not a teacher", "he isn't a teacher", "he's not a teacher"], explain: "Отрицание: is + not. И артикль a перед профессией." },
-      { type: "translate", q: "Мы студенты.", answers: ["we are students", "we're students"], explain: "we are, а «студенты» во множественном числе — без артикля, с -s." },
       { type: "choice", q: "Выбери верное: «Она из Италии.»", opts: ["She from Italy.", "She is from Italy.", "She are from Italy."], answer: 1, explain: "Нужен глагол-связка is." },
       { type: "choice", q: "Выбери верное: «Я не студент.»", opts: ["I not a student.", "I am not a student.", "I don't a student."], answer: 1, explain: "not ставится после am. do/don't здесь не нужны." },
-      { type: "translate", q: "Ты учитель.", answers: ["you are a teacher", "you're a teacher"], explain: "you are + артикль a." }
+      { type: "translate", q: "Мы студенты.", answers: ["we are students", "we're students"], explain: "we are, а «студенты» во множественном числе — без артикля, с -s." }
     ]
   },
+
+  /* ===== Unit 2 ===== */
   {
     id: "u2",
     block: "b1",
     unit: 2,
     title: "am / is / are: вопросы",
     subtitle: "Ты студент? Откуда ты?",
-    theory: [
+    murphy: { pages: "4–5", exPage: "5", theory: "murphy/u2-4.jpg", ex: "murphy/u2-5.jpg", key: ["murphy/key-a.jpg", "murphy/key-b.jpg"] },
+    sections: [
       {
-        h: "Вопрос переворачивает фразу",
-        p: "Утверждение: <b>You are a student.</b> Вопрос: <b>Are you a student?</b> Глагол выходит на первое место, точка меняется на знак вопроса. Никаких do/does здесь не нужно."
+        h: "A. Вопрос",
+        p: "Утверждение: <b>You are a student.</b> Вопрос: <b>Are you a student?</b> Глагол выходит на первое место, точка меняется на знак вопроса. Никаких do/does здесь нет.",
+        table: [
+          ["Утверждение", "Вопрос"],
+          ["You are a student.", "Are you a student?"],
+          ["She is from Italy.", "Is she from Italy?"],
+          ["They are here.", "Are they here?"]
+        ]
       },
       {
-        h: "Как отвечать",
-        p: "Коротко: <b>Yes, I am.</b> / <b>No, I'm not.</b> Нельзя «Yes, I'm» — сокращение в конце ответа не ставится. С he/she: <b>Yes, he is.</b> / <b>No, he isn't.</b>"
+        h: "B. Короткие ответы",
+        p: "<b>Yes, I am.</b> / <b>No, I'm not.</b> С he/she: <b>Yes, she is.</b> / <b>No, she isn't.</b> В конце короткого ответа сокращение не ставим: нельзя «Yes, I'm»."
       },
       {
-        h: "Вопросы с вопросительным словом",
+        h: "C. Вопросы со словами",
+        p: "Вопросительное слово ставится перед глаголом.",
         table: [
           ["Вопрос", "Перевод"],
           ["What is your name?", "Как тебя зовут?"],
@@ -140,7 +192,7 @@ const LESSONS = [
         ]
       },
       {
-        h: "Ловушка",
+        h: "Доп. от меня: ловушка",
         p: "«Как тебя зовут?» — это <b>What is your name?</b>, а не «How are you called». Дословный перевод из русского здесь не работает."
       }
     ],
@@ -158,22 +210,64 @@ const LESSONS = [
       { en: "Where are you from?", ru: "Откуда ты?" },
       { en: "What is your name?", ru: "Как тебя зовут?" }
     ],
+    homework: [
+      {
+        id: "2.1",
+        task: "Составь вопрос из утверждения",
+        items: [
+          { q: "You are a student. →", a: ["are you a student"] },
+          { q: "She is from Italy. →", a: ["is she from italy"] },
+          { q: "They are at home. →", a: ["are they at home"] },
+          { q: "He is a doctor. →", a: ["is he a doctor"] },
+          { q: "You are tired. →", a: ["are you tired"] },
+          { q: "It is cold. →", a: ["is it cold"] }
+        ]
+      },
+      {
+        id: "2.2",
+        task: "Вставь пропущенное",
+        items: [
+          { q: "___ your name Anna?", a: ["is"] },
+          { q: "___ you from Russia?", a: ["are"] },
+          { q: "Where ___ he from?", a: ["is"] },
+          { q: "___ they students?", a: ["are"] },
+          { q: "How ___ you?", a: ["are"] }
+        ]
+      },
+      {
+        id: "2.3",
+        task: "Короткий ответ",
+        items: [
+          { q: "Are you a teacher? (нет) → No, ___", a: ["i'm not", "i am not"] },
+          { q: "Is she from Italy? (да) → Yes, ___", a: ["she is"] },
+          { q: "Are they students? (нет) → No, ___", a: ["they aren't", "they are not", "they're not"] },
+          { q: "Are you tired? (да) → Yes, ___", a: ["i am"] },
+          { q: "Is he your friend? (да) → Yes, ___", a: ["he is"] }
+        ]
+      },
+      {
+        id: "2.4",
+        task: "Напиши о себе",
+        items: [
+          { q: "Как тебя зовут?", a: ["what is your name", "what's your name"], sample: "What is your name?" },
+          { q: "Откуда ты?", a: ["where are you from"], sample: "Where are you from?" }
+        ]
+      }
+    ],
     exercises: [
-      { type: "translate", q: "Ты студент?", answers: ["are you a student"], explain: "Вопрос: are + you + a student." },
-      { type: "translate", q: "Откуда ты?", answers: ["where are you from"], explain: "Where + are + you + from." },
-      { type: "fill", q: "___ she from Italy?", answers: ["is"], explain: "she — is, и в вопросе is идёт первым." },
       { type: "choice", q: "Ответ на «Are you a teacher?» — если нет:", opts: ["No, I not.", "No, I'm not.", "No, I amn't."], answer: 1, explain: "Короткий отрицательный ответ: No, I'm not." },
-      { type: "translate", q: "Как тебя зовут?", answers: ["what is your name", "what's your name"], explain: "Именно what, не how." },
-      { type: "translate", q: "Как дела?", answers: ["how are you"], explain: "How are you? — стандартная фраза." },
       { type: "choice", q: "Где ошибка: «Where you are from?»", opts: ["Всё верно", "you и are надо поменять местами", "нужно do"], answer: 1, explain: "В вопросе глагол перед подлежащим: Where are you from?" }
     ]
   },
+
+  /* ===== Unit 3 ===== */
   {
     id: "u3",
     block: "b1",
     unit: 3,
     title: "I am doing",
     subtitle: "Делаю прямо сейчас",
+    murphy: { pages: "6–7", exPage: "7", theory: "murphy/u3-6.jpg", ex: "murphy/u3-7.jpg", key: ["murphy/key-a.jpg", "murphy/key-b.jpg"] },
     theory: [
       {
         h: "Формула",
@@ -222,12 +316,15 @@ const LESSONS = [
       { type: "choice", q: "Что значит «I am not working today»?", opts: ["Я не работаю вообще", "Я сегодня не работаю", "Я не хочу работать"], answer: 1, explain: "Здесь речь про сегодня, момент вокруг настоящего." }
     ]
   },
+
+  /* ===== Unit 4 ===== */
   {
     id: "u4",
     block: "b1",
     unit: 4,
     title: "Are you doing?",
     subtitle: "Вопросы про «сейчас»",
+    murphy: { pages: "8–9", exPage: "9", theory: "murphy/u4-8.jpg", ex: "murphy/u4-9.jpg", key: ["murphy/key-a.jpg", "murphy/key-b.jpg"] },
     theory: [
       {
         h: "Вопрос",
@@ -235,7 +332,7 @@ const LESSONS = [
       },
       {
         h: "Короткие ответы",
-        p: "<b>Yes, I am.</b> / <b>No, I'm not.</b> <b>Yes, she is.</b> / <b>No, she isn't.</b> Опять: в конце короткого ответа сокращение не ставим."
+        p: "<b>Yes, I am.</b> / <b>No, I'm not.</b> <b>Yes, she is.</b> / <b>No, she isn't.</b> В конце короткого ответа сокращение не ставим."
       },
       {
         h: "Вопросы со словами",
@@ -274,8 +371,7 @@ const LESSONS = [
 ];
 
 /* Сколько упражнений в каждом юните Murphy, 4-е издание.
-   Взято из ключа с ответами в конце книги: юнит N -> упражнения N.1 … N.k.
-   Если юнита нет в таблице — в уроке покажем только страницы. */
-const EXCOUNT = {"1":6,"2":5,"3":4,"4":4,"5":5,"6":5,"7":4,"8":3,"9":5,"10":4,"11":5,"12":5,"13":4,"14":2,"15":2,"16":4,"17":4,"18":4,"19":5,"20":4,"21":4,"22":3,"23":5,"24":4,"25":4,"26":4,"27":5,"28":5,"29":4,"30":4,"31":5,"32":5,"33":6,"35":3,"37":2,"38":3,"39":5,"40":6,"41":4,"42":3,"43":5,"44":4,"45":3,"46":5,"47":5,"48":4,"49":6,"50":3,"51":3,"52":4,"53":3,"54":5,"55":3,"56":5,"57":3,"58":4,"59":5,"60":5,"61":4,"62":4,"63":4,"64":3,"65":4,"66":4,"67":3,"70":4,"71":3,"72":3,"73":2,"74":3,"75":3,"76":4,"77":4,"78":4,"79":4,"80":5,"81":3,"82":3,"83":5,"84":5,"85":4,"86":4,"87":4,"88":3,"89":4,"90":3,"91":4,"92":4,"93":3,"97":3,"98":4,"99":4,"100":4,"101":4,"102":4,"103":5,"104":2,"105":4,"106":2,"107":2,"108":5,"109":3,"110":3,"111":3,"112":5,"113":4,"114":3,"115":4};
+   Взято из ключа с ответами в конце книги: юнит N -> упражнения N.1 … N.k. */
+const EXCOUNT = {"1":6,"2":5,"3":4,"4":4,"5":5,"6":5,"7":4,"8":3,"9":5,"10":4,"11":5,"12":5,"13":4,"14":2,"15":2,"16":4,"17":4,"18":4,"19":5,"20":4,"21":4,"22":3,"23":5,"24":4,"25":4,"26":4,"27":5,"28":5,"29":4,"30":4,"31":5,"32":5,"33":6,"35":3,"37":2,"38":3,"39":5,"40":6,"41":4,"42":3,"43":5,"44":4,"45":3,"46":5,"47":5,"48":4,"49":6,"50":3,"51":3,"52":4,"53":3,"54":5,"55":3,"56":5,"57":3,"58":4,"59":5,"60":6,"61":4,"62":4,"63":4,"64":3,"65":4,"66":4,"67":3,"70":4,"71":3,"72":3,"73":2,"74":3,"75":3,"76":4,"77":4,"78":4,"79":4,"80":5,"81":3,"82":3,"83":5,"84":5,"85":4,"86":4,"87":4,"88":3,"89":4,"90":3,"91":4,"92":4,"93":3,"97":3,"98":4,"99":4,"100":4,"101":4,"102":4,"103":5,"104":2,"105":4,"106":2,"107":2,"108":5,"109":3,"110":3,"111":3,"112":5,"113":4,"114":3,"115":4};
 
 const TEST_SIZE = 10;

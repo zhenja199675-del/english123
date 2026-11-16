@@ -3,99 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#0b0d11">
 <title>English A0 → A2</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<style>
-  :root{
-    --bg:#0f1115; --card:#171a21; --card2:#1e222b; --line:#2a2f3a;
-    --text:#e7e9ee; --muted:#98a1b0; --accent:#7fc9a1; --bad:#e2675f; --warn:#e8c06b;
-    --r:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    -webkit-text-size-adjust:100%}
-  body{padding-bottom:74px}
-  a{color:var(--accent);text-decoration:none}
-  header{position:sticky;top:0;z-index:10;background:rgba(15,17,21,.92);
-    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
-    padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-  header .title{font-weight:600;letter-spacing:.2px}
-  header .streak{font-size:13px;color:var(--muted);white-space:nowrap}
-  header .streak b{color:var(--accent)}
-  main{max-width:760px;margin:0 auto;padding:16px}
-  nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;
-    background:rgba(23,26,33,.97);border-top:1px solid var(--line);
-    padding-bottom:env(safe-area-inset-bottom)}
-  nav button{flex:1;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;
-    padding:10px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
-  nav button.on{color:var(--accent)}
-  nav .ic{font-size:15px;line-height:1}
-  h1{font-size:21px;margin:0 0 4px}
-  h2{font-size:17px;margin:22px 0 8px}
-  h3{font-size:15px;margin:18px 0 6px;color:var(--muted);font-weight:600;
-     text-transform:uppercase;letter-spacing:.06em}
-  p{margin:8px 0}
-  .muted{color:var(--muted)}
-  .small{font-size:13px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
-  .card.tap{display:block;color:inherit;cursor:pointer}
-  .card.tap:active{background:var(--card2)}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .badge{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-  .badge.ok{color:var(--accent);border-color:#2e4a3a;background:#152018}
-  .bar{height:6px;border-radius:99px;background:var(--card2);overflow:hidden;margin-top:10px}
-  .bar > i{display:block;height:100%;background:var(--accent);border-radius:99px}
-  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
-  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-  .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:12px 0}
-  .ex .q{margin:0 0 10px;font-size:16px}
-  .ex .q b{color:var(--warn);font-weight:600}
-  input[type=text]{width:100%;background:#0d1014;border:1px solid var(--line);color:var(--text);
-    border-radius:10px;padding:11px 12px;font:inherit;font-size:16px}
-  input[type=text]:focus{outline:none;border-color:#3c4a5c}
-  .btn{display:inline-block;border:1px solid var(--line);background:var(--card2);color:var(--text);
-    border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
-  .btn:active{transform:translateY(1px)}
-  .btn.primary{background:#1d3327;border-color:#2e4a3a;color:#d6f2e2}
-  .btn.ghost{background:none}
-  .btn.full{display:block;width:100%;text-align:center;margin-top:10px}
-  .opts{display:grid;gap:8px}
-  .opt{border:1px solid var(--line);background:#0d1014;border-radius:10px;padding:11px 12px;
-    color:var(--text);font:inherit;text-align:left;cursor:pointer}
-  .opt.sel{border-color:#3c4a5c;background:#151a22}
-  .opt.good{border-color:#2e4a3a;background:#152018}
-  .opt.bad{border-color:#4a2e2e;background:#201414}
-  .fb{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;display:none}
-  .fb.show{display:block}
-  .fb.ok{background:#152018;border:1px solid #2e4a3a;color:#c9ecd8}
-  .fb.no{background:#201414;border:1px solid #4a2e2e;color:#f0ccc9}
-  .fb .corr{font-weight:600}
-  .word{border-bottom:1px solid var(--line);padding:11px 0}
-  .word:last-child{border-bottom:0}
-  .word .w{font-weight:600}
-  .word .tr{color:var(--muted);font-size:13px}
-  .word .ex2{font-size:14px;margin-top:3px}
-  .grid14{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
-  .day{aspect-ratio:1/1;border-radius:8px;background:var(--card2);border:1px solid var(--line);
-    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
-  .day.on{background:#1d3327;border-color:#2e4a3a;color:#bfe6cf}
-  .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-  .kpi div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-  .kpi b{display:block;font-size:19px}
-  .kpi span{font-size:11px;color:var(--muted)}
-  .back{background:none;border:0;color:var(--muted);font:inherit;padding:0 0 10px;cursor:pointer}
-  .score{font-size:34px;font-weight:700;color:var(--accent)}
-  .empty{color:var(--muted);padding:24px 0;text-align:center}
-  .check{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .check:last-of-type{border-bottom:0}
-  .check input{width:19px;height:19px;accent-color:#7fc9a1;flex:0 0 auto}
-  .check span.done{color:var(--muted);text-decoration:line-through}
-</style>
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <header>
@@ -104,17 +17,25 @@
 </header>
 <main id="view"></main>
 <nav id="nav">
-  <button data-go="course"><span class="ic">☰</span>Курс</button>
-  <button data-go="dict"><span class="ic">A</span>Словарь</button>
-  <button data-go="errors"><span class="ic">!</span>Ошибки</button>
-  <button data-go="progress"><span class="ic">↗</span>Прогресс</button>
+  <button data-go="course">
+    <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H18a1 1 0 0 1 1 1v13"/><path d="M4 5.5V17a3 3 0 0 0 3 3h12"/><path d="M7 8h8"/></svg>
+    Курс</button>
+  <button data-go="dict">
+    <svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5"/><path d="M8.5 13.5 11 18l2.5-4.5"/></svg>
+    Словарь</button>
+  <button data-go="errors">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v6"/><circle cx="12" cy="16.8" r=".9" fill="currentColor" stroke="none"/></svg>
+    Ошибки</button>
+  <button data-go="progress">
+    <svg viewBox="0 0 24 24"><path d="M4 17l5-6 4 4 7-8"/><path d="M20 7h-4M20 7v4"/></svg>
+    Прогресс</button>
 </nav>
 
-<script src="data.js?v=2"></script>
+<script src="data.js?v=3"></script>
 <script>
 /* ---------- хранилище ---------- */
 const KEY = 'en_app_v1';
-const blank = { done:{}, errors:[], log:{}, answers:{}, hw:{} };
+const blank = { done:{}, errors:[], log:{}, answers:{}, hw:{}, murphyAns:{}, given:{} };
 let S = load();
 function load(){
   try { return Object.assign({}, blank, JSON.parse(localStorage.getItem(KEY) || '{}')); }
@@ -163,6 +84,8 @@ function lessonScore(id){
   const total = Object.keys(a).length, ok = Object.values(a).filter(Boolean).length;
   return { total, ok, pct: total ? Math.round(ok*100/total) : 0 };
 }
+function hwItems(l){ return l.homework ? l.homework.reduce((s, b) => s + b.items.length, 0) : 0; }
+function lessonTotal(l){ return l.exercises.length + hwItems(l); }
 
 /* ---------- маршрутизация ---------- */
 function go(view, param){
@@ -197,36 +120,46 @@ function render(view, param){
 
 function renderCourse(){
   header('Курс');
-  let done = 0, all = 0;
-  LESSONS.forEach(l => { all++; if (S.done[l.id]) done++; });
-  let html = '<h1>Английский с нуля</h1><p class="muted small">' +
-    'Грамматика по юнитам Murphy, слова и практика — здесь. ' + done + ' из ' + all + ' уроков пройдено.</p>';
+  const all = LESSONS.length;
+  const done = LESSONS.filter(l => S.done[l.id]).length;
+  const pctAll = all ? Math.round(done * 100 / all) : 0;
+
+  let html = '<h1>Английский с нуля</h1>' +
+    '<p class="muted">Грамматика по Murphy, слова, слух и практика. Один урок — один юнит книги.</p>' +
+    '<div class="card"><div class="row"><div><b>Курс A0 → A2</b>' +
+    '<div class="muted small">6 блоков · 24 недели</div></div>' +
+    '<span class="badge' + (done === all && all ? ' ok' : '') + '">' + done + ' из ' + all + '</span></div>' +
+    '<div class="bar"><i style="width:' + pctAll + '%"></i></div></div>';
 
   BLOCKS.forEach(b => {
     const ls = LESSONS.filter(l => l.block === b.id);
     const okc = ls.filter(l => S.done[l.id]).length;
-    const pct = ls.length ? Math.round(okc*100/ls.length) : 0;
+    const pct = ls.length ? Math.round(okc * 100 / ls.length) : 0;
+
     html += '<div class="card"><div class="row"><div><b>' + esc(b.title) + '</b>' +
       '<div class="muted small">' + esc(b.weeks) + ' · ' + esc(b.units) + '</div></div>' +
-      '<span class="badge' + (okc===ls.length&&ls.length?' ok':'') + '">' + okc + '/' + ls.length + '</span></div>' +
-      '<div class="muted small" style="margin-top:8px">' + esc(b.goal) + '</div>' +
+      '<span class="badge' + (ls.length && okc === ls.length ? ' ok' : '') + '">' + okc + '/' + ls.length + '</span></div>' +
+      '<div class="muted small" style="margin-top:10px">' + esc(b.goal) + '</div>' +
       '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
 
-    if (ls.length){
-      html += '<h3>Уроки</h3>';
-      ls.forEach(l => {
-        const sc = lessonScore(l.id);
-        const right = S.done[l.id] ? '<span class="badge ok">пройден' + (sc ? ', ' + sc.pct + '%' : '') + '</span>'
-                                   : (sc ? '<span class="badge">' + sc.pct + '%</span>' : '');
-        html += '<a class="card tap" href="#lesson/' + l.id + '"><div class="row">' +
-          '<div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
-          '<div class="muted small">' + esc(l.subtitle) + '</div></div>' + right + '</div></a>';
-      });
-      html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
-    } else {
-      html += '<div class="muted small" style="margin-top:8px">Уроки появятся, когда дойдём до блока.</div>';
+    if (!ls.length){
+      html += '<p class="muted small">Уроки появятся, когда дойдём до блока.</p>';
+      return;
     }
+
+    ls.forEach(l => {
+      const sc = lessonScore(l.id);
+      const right = S.done[l.id]
+        ? '<span class="badge ok">пройден' + (sc ? ' · ' + sc.pct + '%' : '') + '</span>'
+        : (sc ? '<span class="badge">' + sc.pct + '%</span>' : '<span class="dim">→</span>');
+      html += '<a class="card tap" href="#lesson/' + l.id + '"><div class="row">' +
+        '<div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+        '<div class="muted small">' + esc(l.subtitle) + '</div></div>' + right + '</div></a>';
+    });
+
+    html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
   });
+
   $('#view').innerHTML = html;
 }
 
@@ -237,7 +170,18 @@ function renderLesson(id){
   let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
   html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>';
 
-  l.theory.forEach(t => {
+  html += '<div class="chips">' +
+    (l.murphy ? '<a class="chip" href="#s-murphy">Мерфи</a>' : '') +
+    (l.murphy ? '<a class="chip" href="#s-homework">Домашка</a>' : '') +
+    (l.homework ? '<a class="chip" href="#s-trainer">Тренажёр</a>' : '') +
+    '<a class="chip" href="#s-words">Слова</a>' +
+    '<a class="chip" href="#s-extra">Дополнительно</a></div>';
+
+  if (l.murphy) html += '<div id="s-murphy">' + murphyBlock(l) + '</div>';
+
+  const theory = l.sections || l.theory || [];
+  html += '<div id="s-notes">';
+  theory.forEach(t => {
     if (t.h) html += '<h2>' + esc(t.h) + '</h2>';
     if (t.p) html += '<p>' + t.p + '</p>';
     if (t.table){
@@ -246,36 +190,47 @@ function renderLesson(id){
         '</tbody></table>';
     }
   });
+  html += '</div>';
 
-  html += '<h3>Слова урока</h3><div class="card">' + l.words.map(w =>
+  html += '<h3 id="s-words">Слова урока</h3><div class="card">' + l.words.map(w =>
     '<div class="word"><div class="row"><span class="w">' + esc(w.w) + '</span><span class="tr">' + esc(w.tr) + '</span></div>' +
     '<div>' + esc(w.ru) + '</div><div class="ex2 muted">' + esc(w.ex) + ' — ' + esc(w.exRu) + '</div></div>').join('') + '</div>';
 
   html += '<h3>Примеры</h3><div class="card">' + l.examples.map(e =>
     '<div class="word"><div>' + esc(e.en) + '</div><div class="ex2 muted">' + esc(e.ru) + '</div></div>').join('') + '</div>';
 
-  html += '<h2>Упражнения</h2><p class="muted small">Пиши полностью, без сокращений. Проверка не строгая к регистру, но строгая к словам.</p>';
+  if (l.homework) html += trainerBlock(l);
+
+  html += '<h2 id="s-extra">Дополнительно</h2><p class="muted small">Мои упражнения на те же темы. Пиши полностью, без сокращений.</p>';
   html += '<div id="exWrap"></div>';
-  html += '<div id="hwWrap"></div>';
+  html += '<div id="trainWrap"></div>';
   html += '<div id="lessonEnd"></div>';
   $('#view').innerHTML = html;
 
+  if (l.murphy) wireMurphy(l);
+
   const wrap = $('#exWrap');
   l.exercises.forEach((ex, i) => {
-    wrap.appendChild(exCard(ex, (ok, given, correct) => record(l.id, 'u' + i, ok, ex, given, correct)));
+    const key = 'u' + i;
+    const savedText = S.given && S.given[l.id + '|' + key];
+    const savedOk = !!(S.answers[l.id] && S.answers[l.id][key]);
+    const restore = savedText ? { given: savedText, ok: savedOk } : null;
+    wrap.appendChild(exCard(ex, (ok, given, correct) => record(l.id, key, ok, ex, given, correct), restore));
   });
 
-  $('#hwWrap').innerHTML = hwBlock(l);
-  wireHw(l);
+  if (l.homework){
+    $('#trainWrap').innerHTML = '';
+    wireTrainer(l);
+  }
 
   const st = lessonScore(l.id);
-  if (st && st.total >= l.exercises.length){
+  if (st && st.total >= lessonTotal(l)){
     $('#lessonEnd').innerHTML = '<div class="card"><b>Урок пройден: ' + st.pct + '%</b>' +
       '<p class="muted small">Можно вернуться завтра и пройти заново — вопросы те же.</p></div>';
   }
 }
 
-function exCard(ex, onAnswer){
+function exCard(ex, onAnswer, restore){
   const div = document.createElement('div');
   div.className = 'ex';
   div.innerHTML = '<p class="q">' + esc(ex.q) + '</p>';
@@ -310,6 +265,11 @@ function exCard(ex, onAnswer){
   };
   div.querySelector('.btn').addEventListener('click', check);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  if (restore && restore.given){
+    inp.value = restore.given;
+    inp.style.borderColor = restore.ok ? '#2e4a3a' : '#4a2e2e';
+    showFb(div, restore.ok, ex.answers[0], ex.explain);
+  }
   return div;
 }
 
@@ -323,17 +283,23 @@ function showFb(div, ok, correct, explain){
 function cap(s){ return s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : s; }
 
 function record(lessonId, key, ok, ex, given, correct){
+  markAnswer(lessonId, key, ok, ex.q, given, correct);
+}
+
+function markAnswer(lessonId, key, ok, q, given, correct){
   if (!S.answers[lessonId]) S.answers[lessonId] = {};
   S.answers[lessonId][key] = ok;
+  if (!S.given) S.given = {};
+  S.given[lessonId + '|' + key] = given;
   if (!ok){
-    const dup = S.errors.some(e => e.q === ex.q && e.date === today());
-    if (!dup) S.errors.unshift({ date: today(), lesson: lessonId, q: ex.q, given, correct });
+    const dup = S.errors.some(e => e.q === q && e.date === today());
+    if (!dup) S.errors.unshift({ date: today(), lesson: lessonId, q, given, correct });
   }
   markDay();
   const l = lessonById(lessonId);
   if (l){
     const answered = Object.keys(S.answers[lessonId]).length;
-    if (answered >= l.exercises.length) S.done[lessonId] = { date: today() };
+    if (answered >= lessonTotal(l)) S.done[lessonId] = { date: today() };
   }
   save();
   refreshStreak();
@@ -344,54 +310,111 @@ function refreshStreak(){
   $('#hStreak').innerHTML = st ? 'серия <b>' + st + '</b> дн.' : 'начни сегодня';
 }
 
-/* ---------- домашка по Murphy ---------- */
-function hwBlock(l){
-  const n = l.unit;
-  const pages = (2*n) + '–' + (2*n + 1);
-  const total = EXCOUNT[String(n)];
-  const done = (S.hw && S.hw[l.id]) || {};
+/* ---------- Мерфи: страницы книги ---------- */
+function murphyBlock(l){
+  const m = l.murphy, n = l.unit;
+  let html = '<h2>Мерфи: Unit ' + n + '</h2>' +
+    '<p class="muted small">Страницы ' + esc(m.pages) + ' твоего издания. Тапни по странице, чтобы открыть крупно.</p>' +
+    '<div class="card"><a href="' + m.theory + '" target="_blank" rel="noopener">' +
+    '<img class="page" src="' + m.theory + '" alt="Murphy Unit ' + n + ', страница правила"></a></div>';
 
-  let html = '<h2>Домашка по Murphy</h2><div class="card">' +
-    '<div class="row"><div><b>Unit ' + n + '</b>' +
-    '<div class="muted small">страницы ' + pages + ' в 4-м издании</div></div>' +
-    '<span class="badge" id="hwCount"></span></div>';
-
-  if (total){
-    html += '<p class="muted small" style="margin:10px 0 4px">Упражнения ' + n + '.1 – ' + n + '.' + total +
-      '. Текст в книге, здесь только отметки.</p>';
-    for (let k = 1; k <= total; k++){
-      const on = !!done[k];
-      html += '<label class="check"><input type="checkbox" data-ex="' + k + '"' + (on ? ' checked' : '') + '>' +
-        '<span class="' + (on ? 'done' : '') + '">Упражнение ' + n + '.' + k + '</span></label>';
-    }
-  } else {
-    html += '<p class="muted small">Номера упражнений этого юнита не разобраны — сделай те, что на странице ' + (2*n + 1) + '.</p>';
-  }
-  return html + '</div>';
+  html += '<h3 id="s-homework">Домашка по книге</h3>' +
+    '<p class="muted small">Упражнения на странице ' + esc(m.exPage) + '. Пиши ответы здесь, потом сверься с ключом.</p>' +
+    '<div class="card"><a href="' + m.ex + '" target="_blank" rel="noopener">' +
+    '<img class="page" src="' + m.ex + '" alt="Упражнения Unit ' + n + '"></a></div>' +
+    '<div class="card"><div class="muted small" style="margin-bottom:6px">Мои ответы</div>' +
+    '<textarea id="mAns" rows="6" placeholder="1.1  she\'s …"></textarea>' +
+    '<div class="row" style="margin-top:8px"><button class="btn" id="mKey">Показать ключ</button>' +
+    '<span class="muted small" id="mSaved"></span></div>' +
+    '<div id="keyWrap" style="display:none;margin-top:10px">' +
+    m.key.map(k => '<a href="' + k + '" target="_blank" rel="noopener"><img class="page" style="margin-bottom:8px" src="' + k + '" alt="Ключ с ответами"></a>').join('') +
+    '</div></div>';
+  return html;
 }
 
-function wireHw(l){
-  const boxes = Array.from(document.querySelectorAll('#hwWrap input[type=checkbox]'));
-  const total = boxes.length;
-  const upd = () => {
-    const done = boxes.filter(b => b.checked).length;
-    const el = document.getElementById('hwCount');
-    if (!el) return;
-    el.textContent = total ? done + ' из ' + total : '';
-    el.className = 'badge' + (total && done === total ? ' ok' : '');
-  };
-  boxes.forEach(b => {
-    b.addEventListener('change', () => {
-      if (!S.hw[l.id]) S.hw[l.id] = {};
-      if (b.checked) S.hw[l.id][b.dataset.ex] = true;
-      else delete S.hw[l.id][b.dataset.ex];
-      const label = b.parentElement.querySelector('span');
-      if (label) label.classList.toggle('done', b.checked);
-      save();
-      upd();
+function wireMurphy(l){
+  const ta = document.getElementById('mAns');
+  if (!ta) return;
+  ta.value = (S.murphyAns && S.murphyAns[l.id]) || '';
+  let t = null;
+  ta.addEventListener('input', () => {
+    if (!S.murphyAns) S.murphyAns = {};
+    S.murphyAns[l.id] = ta.value;
+    save();
+    const s = document.getElementById('mSaved');
+    if (s) s.textContent = 'сохранено';
+    clearTimeout(t);
+    t = setTimeout(() => { if (s) s.textContent = ''; }, 1500);
+  });
+  document.getElementById('mKey').addEventListener('click', () => {
+    const k = document.getElementById('keyWrap');
+    const on = k.style.display !== 'none';
+    k.style.display = on ? 'none' : 'block';
+    document.getElementById('mKey').textContent = on ? 'Показать ключ' : 'Скрыть ключ';
+  });
+}
+
+/* ---------- Тренажёр с проверкой ---------- */
+function trainerBlock(l){
+  let html = '<h2 id="s-trainer">Тренажёр</h2><p class="muted small">Те же темы, что в книге, но с проверкой прямо здесь.</p>';
+  l.homework.forEach((blk, bi) => {
+    html += '<div class="ex"><div class="row"><b>' + blk.id + ' · ' + esc(blk.task) + '</b>' +
+      '<span class="badge" id="tb-' + bi + '"></span></div>' +
+      '<div id="hwb-' + bi + '" style="margin-top:6px"></div></div>';
+  });
+  return html;
+}
+
+function wireTrainer(l){
+  l.homework.forEach((blk, bi) => {
+    const host = document.getElementById('hwb-' + bi);
+    const badge = document.getElementById('tb-' + bi);
+    const marks = [];
+    if (badge) badge.textContent = '0 из ' + blk.items.length;
+
+    blk.items.forEach((it, ii) => {
+      const key = 'h' + blk.id + '.' + ii;
+      const row = document.createElement('div');
+      row.className = 'hwrow';
+      row.innerHTML = '<div class="hwq">' + (ii + 1) + '. ' + esc(it.q) + '</div>' +
+        '<div class="row"><input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ответ">' +
+        '<button class="btn">ОК</button><span class="mark"></span></div><div class="fb"></div>';
+
+      const inp = row.querySelector('input');
+      const mark = row.querySelector('.mark');
+      const fb = row.querySelector('.fb');
+      const check = (silent) => {
+        const v = inp.value.trim();
+        if (!v) return;
+        const ok = it.a.some(x => norm(x) === norm(v));
+        inp.style.borderColor = ok ? '#2e4a3a' : '#4a2e2e';
+        mark.textContent = ok ? '✓' : '✕';
+        mark.style.color = ok ? 'var(--accent)' : 'var(--bad)';
+        if (!ok){
+          fb.className = 'fb show no';
+          fb.innerHTML = 'Верно: <span class="corr">' + esc(cap(it.a[0])) + '</span>';
+        } else if (it.sample){
+          fb.className = 'fb show ok';
+          fb.innerHTML = 'Образец: ' + esc(it.sample);
+        } else {
+          fb.className = 'fb';
+        }
+        marks[ii] = ok;
+        const done = marks.filter(Boolean).length;
+        if (badge){
+          badge.textContent = done + ' из ' + blk.items.length;
+          badge.className = 'badge' + (done === blk.items.length ? ' ok' : '');
+        }
+        if (!silent) markAnswer(l.id, key, ok, it.q, v, it.a[0]);
+      };
+      row.querySelector('.btn').addEventListener('click', () => check(false));
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(false); });
+      host.appendChild(row);
+
+      const saved = S.given && S.given[l.id + '|' + key];
+      if (saved){ inp.value = saved; check(true); }
     });
   });
-  upd();
 }
 
 function renderDict(){
