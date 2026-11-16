@@ -126,6 +126,12 @@ function lessonScore(id){
   const total = Object.keys(a).length, ok = Object.values(a).filter(Boolean).length;
   return { total, ok, pct: total ? Math.round(ok*100/total) : 0 };
 }
+function plural(n, one, few, many){
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
 function hwItems(l){ return l.homework ? l.homework.reduce((s, b) => s + b.items.length, 0) : 0; }
 function lessonTotal(l){ return l.exercises.length + hwItems(l) + (l.listening || []).length; }
 
@@ -234,7 +240,8 @@ function renderLesson(id){
   header('Unit ' + l.unit);
   let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
   html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>' +
-    '<div class="meta"><span>' + l.words.length + ' слов</span><span>' + lessonTotal(l) + ' заданий</span><span>20–30 минут</span></div>';
+    '<div class="meta"><span>' + l.words.length + ' ' + plural(l.words.length, 'слово', 'слова', 'слов') + '</span>' +
+    '<span>' + lessonTotal(l) + ' ' + plural(lessonTotal(l), 'задание', 'задания', 'заданий') + '</span><span>20–30 минут</span></div>';
 
   html += '<div class="chips">' +
     (l.murphy ? '<a class="chip" href="#s-murphy">Мерфи</a>' : '') +
