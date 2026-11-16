@@ -12,7 +12,7 @@
 </head>
 <body>
 <header>
-  <div class="title" id="hTitle">English</div>
+  <div class="brand"><span class="mark">EN</span><div class="title" id="hTitle">English</div></div>
   <div class="streak" id="hStreak"></div>
 </header>
 <main id="view"></main>
@@ -31,11 +31,11 @@
     Прогресс</button>
 </nav>
 
-<script src="data.js?v=3"></script>
+<script src="data.js?v=5"></script>
 <script>
 /* ---------- хранилище ---------- */
 const KEY = 'en_app_v1';
-const blank = { done:{}, errors:[], log:{}, answers:{}, hw:{}, murphyAns:{}, given:{} };
+const blank = { done:{}, errors:[], log:{}, answers:{}, hw:{}, murphyAns:{}, given:{}, tests:{} };
 let S = load();
 function load(){
   try { return Object.assign({}, blank, JSON.parse(localStorage.getItem(KEY) || '{}')); }
@@ -64,6 +64,48 @@ function streak(){
 /* ---------- утилиты ---------- */
 const $ = s => document.querySelector(s);
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const SPEAKER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13L7.2 14.5H4z"/>' +
+  '<path d="M15.4 8.6a4.8 4.8 0 0 1 0 6.8"/><path d="M17.9 6a8.4 8.4 0 0 1 0 12"/></svg>';
+function audioButton(text, label, compact){
+  return '<button class="btn audio-btn' + (compact ? ' compact' : '') + '" type="button" data-speak="' + esc(text) +
+    '" aria-label="' + esc(label) + '">' + SPEAKER_ICON + (compact ? '' : '<span>Слушать</span>') + '</button>';
+}
+function pickEnglishVoice(){
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const english = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en'));
+  const natural = english.filter(v => /natural|neural|google|microsoft/i.test(v.name));
+  return natural.find(v => /^en[-_]gb/i.test(v.lang)) ||
+    natural.find(v => /^en/i.test(v.lang)) ||
+    english.find(v => /^en[-_]gb/i.test(v.lang)) ||
+    english[0] || null;
+}
+function speakText(text){
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-GB';
+  utterance.rate = 0.86;
+  const voice = pickEnglishVoice();
+  if (voice) utterance.voice = voice;
+  window.speechSynthesis.speak(utterance);
+}
+function prepareVoices(){
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', () => pickEnglishVoice());
+}
+function wireAudio(root){
+  const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  root.querySelectorAll('[data-speak]').forEach(button => {
+    if (!supported){
+      button.disabled = true;
+      button.title = 'Озвучивание не поддерживается этим браузером';
+      return;
+    }
+    button.addEventListener('click', () => speakText(button.dataset.speak));
+  });
+}
 function norm(s){
   return String(s).toLowerCase()
     .replace(/[’`]/g,"'")
@@ -85,20 +127,32 @@ function lessonScore(id){
   return { total, ok, pct: total ? Math.round(ok*100/total) : 0 };
 }
 function hwItems(l){ return l.homework ? l.homework.reduce((s, b) => s + b.items.length, 0) : 0; }
-function lessonTotal(l){ return l.exercises.length + hwItems(l); }
+function lessonTotal(l){ return l.exercises.length + hwItems(l) + (l.listening || []).length; }
 
 /* ---------- маршрутизация ---------- */
 function go(view, param){
   location.hash = param ? view + '/' + param : view;
 }
 window.addEventListener('hashchange', route);
+let currentView = 'course', currentParam = null;
 function route(){
-  const parts = location.hash.replace(/^#/, '').split('/').filter(Boolean);
-  const view = parts[0] || 'course';
-  const param = parts[1];
-  render(view, param);
+  const raw = location.hash.replace(/^#/, '');
+  const anchor = raw.startsWith('s-') ? raw : null;
+  const parts = raw.split('/').filter(Boolean);
+  const view = anchor ? currentView : (parts[0] || 'course');
+  const param = anchor ? currentParam : parts[1];
+  if (!anchor){
+    currentView = view;
+    currentParam = param;
+    render(view, param);
+  }
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === view));
-  window.scrollTo(0,0);
+  if (anchor){
+    const el = document.getElementById(anchor);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  } else {
+    window.scrollTo(0,0);
+  }
 }
 document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 
@@ -125,9 +179,17 @@ function renderCourse(){
   const pctAll = all ? Math.round(done * 100 / all) : 0;
 
   let html = '<h1>Английский с нуля</h1>' +
-    '<p class="muted">Грамматика по Murphy, слова, слух и практика. Один урок — один юнит книги.</p>' +
+    '<p class="muted">Грамматика по Murphy, озвучивание, аудирование и практика. Сейчас заполнены Unit 1–4; следующие добавляются по мере прохождения.</p>' +
+    '<div class="card study-guide"><div class="row"><b>Начни с Unit 1</b><span class="badge">20–30 минут</span></div>' +
+    '<p class="small">Слова повторяй в Anki — здесь они нужны в примерах и аудио. Не проходи весь экран за раз: за занятие достаточно 5–6 предложений.</p>' +
+    '<details><summary>План занятия на 25 минут</summary><ol>' +
+    '<li><b>5 минут:</b> повтори в Anki 5 слов и 2 фразы с прошлых занятий.</li>' +
+    '<li><b>8 минут:</b> разбери одну конструкцию или 6–8 новых слов.</li>' +
+    '<li><b>10 минут:</b> послушай фразы и сделай 5–6 заданий самостоятельно.</li>' +
+    '<li><b>2 минуты:</b> запиши 3 фразы, которые хочешь помнить, и что повторить завтра.</li>' +
+    '</ol><p class="muted small">Озвучивает голос устройства: произношение может отличаться. После теста по блоку на 80% можно идти дальше; если ниже — повтори ошибки.</p></details></div>' +
     '<div class="card"><div class="row"><div><b>Курс A0 → A2</b>' +
-    '<div class="muted small">6 блоков · 24 недели</div></div>' +
+    '<div class="muted small">план: 6 блоков · 24 недели</div></div>' +
     '<span class="badge' + (done === all && all ? ' ok' : '') + '">' + done + ' из ' + all + '</span></div>' +
     '<div class="bar"><i style="width:' + pctAll + '%"></i></div></div>';
 
@@ -136,11 +198,14 @@ function renderCourse(){
     const okc = ls.filter(l => S.done[l.id]).length;
     const pct = ls.length ? Math.round(okc * 100 / ls.length) : 0;
 
+    const tr = S.tests && S.tests[b.id];
     html += '<div class="card"><div class="row"><div><b>' + esc(b.title) + '</b>' +
       '<div class="muted small">' + esc(b.weeks) + ' · ' + esc(b.units) + '</div></div>' +
       '<span class="badge' + (ls.length && okc === ls.length ? ' ok' : '') + '">' + okc + '/' + ls.length + '</span></div>' +
       '<div class="muted small" style="margin-top:10px">' + esc(b.goal) + '</div>' +
-      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      (tr ? '<div class="muted small" style="margin-top:8px">Тест: ' + tr.pct + '% · ' + tr.date + '</div>' : '') +
+      '</div>';
 
     if (!ls.length){
       html += '<p class="muted small">Уроки появятся, когда дойдём до блока.</p>';
@@ -157,7 +222,7 @@ function renderCourse(){
         '<div class="muted small">' + esc(l.subtitle) + '</div></div>' + right + '</div></a>';
     });
 
-    html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
+    if (ls.length) html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
   });
 
   $('#view').innerHTML = html;
@@ -168,11 +233,13 @@ function renderLesson(id){
   if (!l) { go('course'); return; }
   header('Unit ' + l.unit);
   let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
-  html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>';
+  html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>' +
+    '<div class="meta"><span>' + l.words.length + ' слов</span><span>' + lessonTotal(l) + ' заданий</span><span>20–30 минут</span></div>';
 
   html += '<div class="chips">' +
     (l.murphy ? '<a class="chip" href="#s-murphy">Мерфи</a>' : '') +
     (l.murphy ? '<a class="chip" href="#s-homework">Домашка</a>' : '') +
+    (l.listening && l.listening.length ? '<a class="chip" href="#s-listening">Слушаем</a>' : '') +
     (l.homework ? '<a class="chip" href="#s-trainer">Тренажёр</a>' : '') +
     '<a class="chip" href="#s-words">Слова</a>' +
     '<a class="chip" href="#s-extra">Дополнительно</a></div>';
@@ -192,12 +259,19 @@ function renderLesson(id){
   });
   html += '</div>';
 
+  if (l.listening && l.listening.length){
+    html += '<h2 id="s-listening">Аудирование</h2><p class="muted small">Сначала нажми «Слушать», не подглядывай в английскую фразу и выбери перевод. Можно переслушать.</p>' +
+      '<div id="listenWrap"></div>';
+  }
+
   html += '<h3 id="s-words">Слова урока</h3><div class="card">' + l.words.map(w =>
-    '<div class="word"><div class="row"><span class="w">' + esc(w.w) + '</span><span class="tr">' + esc(w.tr) + '</span></div>' +
+    '<div class="word"><div class="row"><div><span class="w">' + esc(w.w) + '</span><div class="tr">' + esc(w.tr) + '</div></div>' +
+    audioButton(w.w, 'Слушать слово ' + w.w, true) + '</div>' +
     '<div>' + esc(w.ru) + '</div><div class="ex2 muted">' + esc(w.ex) + ' — ' + esc(w.exRu) + '</div></div>').join('') + '</div>';
 
   html += '<h3>Примеры</h3><div class="card">' + l.examples.map(e =>
-    '<div class="word"><div>' + esc(e.en) + '</div><div class="ex2 muted">' + esc(e.ru) + '</div></div>').join('') + '</div>';
+    '<div class="word"><div class="row"><span class="phrase">' + esc(e.en) + '</span>' + audioButton(e.en, 'Слушать фразу', true) + '</div>' +
+    '<div class="ex2 muted">' + esc(e.ru) + '</div></div>').join('') + '</div>';
 
   if (l.homework) html += trainerBlock(l);
 
@@ -206,8 +280,23 @@ function renderLesson(id){
   html += '<div id="trainWrap"></div>';
   html += '<div id="lessonEnd"></div>';
   $('#view').innerHTML = html;
+  wireAudio($('#view'));
 
   if (l.murphy) wireMurphy(l);
+
+  if (l.listening && l.listening.length){
+    const listenWrap = $('#listenWrap');
+    l.listening.forEach((ex, i) => {
+      const key = 'a' + i;
+      const savedText = S.given && S.given[l.id + '|' + key];
+      const savedOk = !!(S.answers[l.id] && S.answers[l.id][key]);
+      const restore = savedText ? { given: savedText, ok: savedOk } : null;
+      listenWrap.appendChild(exCard(ex, (ok, given, correct) => {
+        record(l.id, key, ok, ex, given, correct);
+        refreshLessonEnd(l);
+      }, restore));
+    });
+  }
 
   const wrap = $('#exWrap');
   l.exercises.forEach((ex, i) => {
@@ -215,7 +304,10 @@ function renderLesson(id){
     const savedText = S.given && S.given[l.id + '|' + key];
     const savedOk = !!(S.answers[l.id] && S.answers[l.id][key]);
     const restore = savedText ? { given: savedText, ok: savedOk } : null;
-    wrap.appendChild(exCard(ex, (ok, given, correct) => record(l.id, key, ok, ex, given, correct), restore));
+    wrap.appendChild(exCard(ex, (ok, given, correct) => {
+      record(l.id, key, ok, ex, given, correct);
+      refreshLessonEnd(l);
+    }, restore));
   });
 
   if (l.homework){
@@ -223,17 +315,34 @@ function renderLesson(id){
     wireTrainer(l);
   }
 
-  const st = lessonScore(l.id);
-  if (st && st.total >= lessonTotal(l)){
-    $('#lessonEnd').innerHTML = '<div class="card"><b>Урок пройден: ' + st.pct + '%</b>' +
-      '<p class="muted small">Можно вернуться завтра и пройти заново — вопросы те же.</p></div>';
+  refreshLessonEnd(l);
+}
+
+function refreshLessonEnd(l){
+  const host = $('#lessonEnd');
+  if (!host) return;
+  const st = lessonScore(l.id), total = lessonTotal(l);
+  if (!st){
+    host.innerHTML = '';
+  } else if (st.total >= total){
+    host.innerHTML = '<div class="card"><b>' + (st.pct >= 80 ? 'Урок пройден: ' : 'Ответы есть, но порог не набран: ') + st.pct + '%</b>' +
+      '<p class="muted small">' + (st.pct >= 80
+        ? 'Можно возвращаться завтра. Ошибки из журнала повтори отдельно.'
+        : 'Нужно 80% верных, чтобы урок считался пройденным. Разбери ошибки во вкладке «Ошибки» и вернись к уроку позже.') + '</p></div>';
+  } else {
+    host.innerHTML = '<p class="muted small">Отвечено ' + st.total + ' из ' + total +
+      '. Можно остановиться и продолжить завтра: ответы сохраняются.</p>';
   }
 }
 
-function exCard(ex, onAnswer, restore){
+function exCard(ex, onAnswer, restore, once){
   const div = document.createElement('div');
+  const finished = !!(restore && restore.ok);
+  let locked = finished || (!!once && !!restore);
   div.className = 'ex';
-  div.innerHTML = '<p class="q">' + esc(ex.q) + '</p>';
+  if (ex.guide) div.innerHTML += '<div class="test-guide">' + esc(ex.guide) + '</div>';
+  div.innerHTML += '<p class="q">' + esc(ex.q) + '</p>';
+  if (ex.audio) div.innerHTML += audioButton(ex.audio, 'Слушать фразу');
 
   if (ex.type === 'choice'){
     div.innerHTML += '<div class="opts">' +
@@ -241,35 +350,52 @@ function exCard(ex, onAnswer, restore){
       '</div><div class="fb"></div>';
     div.querySelectorAll('.opt').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (locked) return;
+        locked = true;
         const i = Number(btn.dataset.i), right = i === ex.answer;
-        div.querySelectorAll('.opt').forEach(b => b.classList.remove('sel'));
+        div.querySelectorAll('.opt').forEach(b => { b.classList.remove('sel'); b.disabled = true; });
         btn.classList.add(right ? 'good' : 'bad');
         if (!right) div.querySelectorAll('.opt')[ex.answer].classList.add('good');
         showFb(div, right, ex.opts[ex.answer], ex.explain);
         onAnswer(right, ex.opts[i], ex.opts[ex.answer]);
       });
     });
+    if (restore && restore.given){
+      const i = ex.opts.findIndex(o => norm(o) === norm(restore.given));
+      if (i >= 0){
+        const buttons = Array.from(div.querySelectorAll('.opt'));
+        buttons.forEach(b => { b.disabled = locked; });
+        buttons[i].classList.add(i === ex.answer ? 'good' : 'bad');
+        if (i !== ex.answer) buttons[ex.answer].classList.add('good');
+        showFb(div, restore.ok, ex.opts[ex.answer], ex.explain);
+      }
+    }
+    wireAudio(div);
     return div;
   }
 
-  div.innerHTML += '<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ответ по-английски">' +
-    '<div class="row" style="margin-top:8px"><button class="btn primary">Проверить</button></div><div class="fb"></div>';
+  const placeholder = ex.audio ? 'запиши фразу по-английски' : 'ответ по-английски';
+  div.innerHTML += '<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + placeholder + '">' +
+    '<div class="row" style="margin-top:8px"><button class="btn primary check-btn">Проверить</button></div><div class="fb"></div>';
   const inp = div.querySelector('input');
   const check = () => {
+    if (locked) return;
     const val = inp.value.trim();
     if (!val) return;
     const ok = ex.answers.some(a => norm(a) === norm(val));
+    locked = true;
     inp.style.borderColor = ok ? '#2e4a3a' : '#4a2e2e';
     showFb(div, ok, ex.answers[0], ex.explain);
     onAnswer(ok, val, ex.answers[0]);
   };
-  div.querySelector('.btn').addEventListener('click', check);
+  div.querySelector('.check-btn').addEventListener('click', check);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
   if (restore && restore.given){
     inp.value = restore.given;
     inp.style.borderColor = restore.ok ? '#2e4a3a' : '#4a2e2e';
     showFb(div, restore.ok, ex.answers[0], ex.explain);
   }
+  wireAudio(div);
   return div;
 }
 
@@ -298,8 +424,12 @@ function markAnswer(lessonId, key, ok, q, given, correct){
   markDay();
   const l = lessonById(lessonId);
   if (l){
-    const answered = Object.keys(S.answers[lessonId]).length;
-    if (answered >= lessonTotal(l)) S.done[lessonId] = { date: today() };
+    const sc = lessonScore(lessonId);
+    if (sc && sc.total >= lessonTotal(l) && sc.pct >= 80){
+      S.done[lessonId] = S.done[lessonId] || { date: today() };
+    } else {
+      delete S.done[lessonId];
+    }
   }
   save();
   refreshStreak();
@@ -356,7 +486,7 @@ function wireMurphy(l){
 
 /* ---------- Тренажёр с проверкой ---------- */
 function trainerBlock(l){
-  let html = '<h2 id="s-trainer">Тренажёр</h2><p class="muted small">Те же темы, что в книге, но с проверкой прямо здесь.</p>';
+  let html = '<h2 id="s-trainer">Тренажёр</h2><p class="muted small">Те же темы, что в книге, но с проверкой прямо здесь. За одно занятие делай один блок или 5–6 ответов — остаток можно оставить на следующий день.</p>';
   l.homework.forEach((blk, bi) => {
     html += '<div class="ex"><div class="row"><b>' + blk.id + ' · ' + esc(blk.task) + '</b>' +
       '<span class="badge" id="tb-' + bi + '"></span></div>' +
@@ -405,7 +535,10 @@ function wireTrainer(l){
           badge.textContent = done + ' из ' + blk.items.length;
           badge.className = 'badge' + (done === blk.items.length ? ' ok' : '');
         }
-        if (!silent) markAnswer(l.id, key, ok, it.q, v, it.a[0]);
+        if (!silent){
+          markAnswer(l.id, key, ok, it.q, v, it.a[0]);
+          refreshLessonEnd(l);
+        }
       };
       row.querySelector('.btn').addEventListener('click', () => check(false));
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(false); });
@@ -420,13 +553,15 @@ function wireTrainer(l){
 function renderDict(){
   header('Словарь');
   const words = allWords();
-  let html = '<h1>Словарь</h1><p class="muted small">' + words.length + ' слов из уроков. Anki ведёшь отдельно, здесь просто справочник.</p>';
+  let html = '<h1>Словарь</h1><p class="muted small">' + words.length + ' слов из уроков. Повторы остаются в Anki; здесь — поиск, примеры и озвучка.</p>';
   html += '<input type="text" id="q" placeholder="поиск: слово или перевод" style="margin-bottom:6px">';
   html += '<div class="card" id="list">' + words.map(w =>
     '<div class="word" data-s="' + esc((w.w + ' ' + w.ru + ' ' + w.ex).toLowerCase()) + '">' +
-    '<div class="row"><span class="w">' + esc(w.w) + '</span><span class="tr">' + esc(w.tr) + '</span></div>' +
+    '<div class="row"><div><span class="w">' + esc(w.w) + '</span><div class="tr">' + esc(w.tr) + '</div></div>' +
+    audioButton(w.w, 'Слушать слово ' + w.w, true) + '</div>' +
     '<div>' + esc(w.ru) + '</div><div class="ex2 muted">' + esc(w.ex) + ' — ' + esc(w.exRu) + '</div></div>').join('') + '</div>';
   $('#view').innerHTML = html;
+  wireAudio($('#view'));
   $('#q').addEventListener('input', e => {
     const v = e.target.value.toLowerCase().trim();
     document.querySelectorAll('#list .word').forEach(el => {
@@ -460,7 +595,7 @@ function renderProgress(){
   const days = Object.keys(S.log).sort();
   let answered = 0, right = 0;
   Object.values(S.answers).forEach(o => Object.values(o).forEach(v => { answered++; if (v) right++; }));
-  const doneLessons = Object.keys(S.done).length;
+  const doneLessons = Object.keys(S.done || {}).length;
   const acc = answered ? Math.round(right*100/answered) : 0;
 
   let html = '<h1>Прогресс</h1><div class="kpi">' +
@@ -471,7 +606,7 @@ function renderProgress(){
   html += '<h2>Последние 14 дней</h2><div class="grid14">';
   for (let i = 13; i >= 0; i--){
     const d = new Date(); d.setDate(d.getDate()-i);
-    const k = d.toISOString().slice(0,10);
+    const k = dayKey(d);
     html += '<div class="day' + (S.log[k] ? ' on' : '') + '">' + d.getDate() + '</div>';
   }
   html += '</div>';
@@ -493,9 +628,29 @@ function renderTest(blockId){
   const lessons = LESSONS.filter(l => l.block === blockId);
   if (!lessons.length){ go('course'); return; }
   header('Тест');
-  let pool = [];
-  lessons.forEach(l => l.exercises.forEach(ex => pool.push({ ex, lesson:l })));
-  pool = pool.sort(() => Math.random() - .5).slice(0, TEST_SIZE);
+  const listening = [], written = [], homework = [];
+  lessons.forEach(l => {
+    l.exercises.forEach(ex => written.push({ ex, lesson:l }));
+    (l.listening || []).forEach(ex => listening.push({ ex, lesson:l }));
+    (l.homework || []).forEach(group => group.items.forEach(item => {
+      homework.push({
+        ex: {
+          type:'fill', q:item.q, answers:item.a,
+          explain:item.explain || 'Проверь порядок слов и форму глагола.',
+          guide:group.task
+        },
+        lesson:l
+      });
+    }));
+  });
+  listening.sort(() => Math.random() - .5);
+  written.sort(() => Math.random() - .5);
+  homework.sort(() => Math.random() - .5);
+  const regularSize = Math.ceil(TEST_SIZE / 2);
+  const listenPart = listening.slice(0, 2);
+  const regularPart = listenPart.concat(written.slice(0, regularSize - listenPart.length));
+  const homeworkPart = homework.slice(0, TEST_SIZE - regularPart.length);
+  let pool = regularPart.concat(homeworkPart).sort(() => Math.random() - .5);
 
   let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>' +
     '<h1>Тест по блоку</h1><p class="muted small">' + pool.length + ' вопросов. Без подсказок, правила не подглядывай.</p>' +
@@ -518,16 +673,19 @@ function renderTest(blockId){
       markDay(); save(); refreshStreak();
       if (answered === pool.length){
         const pct = Math.round(right*100/pool.length);
+        if (!S.tests) S.tests = {};
+        S.tests[blockId] = { pct, right, total:pool.length, date:today() };
+        save();
         $('#testEnd').innerHTML = '<div class="card"><div class="muted small">Результат</div>' +
           '<div class="score">' + pct + '%</div><div>' + right + ' из ' + pool.length + ' верно</div>' +
           '<p class="muted small">' + (pct >= 80
-            ? 'Блок можно считать пройденным.'
+            ? 'Тест пройден, результат сохранён на странице курса.'
             : pct >= 50
-              ? 'Половина сидит. Повтори слабые уроки и пройди ещё раз.'
-              : 'Рано. Возвращайся в уроки, тест пока не про тебя.') + '</p>' +
+              ? 'Половина сидит. Результат сохранён; повтори слабые уроки и пройди ещё раз.'
+              : 'Рано. Результат сохранён; возвращайся в уроки, тест пока не про тебя.') + '</p>' +
           '<button class="btn full" onclick="renderTest(\'' + blockId + '\')">Пройти заново</button></div>';
       }
-    }));
+    }, null, true));
   });
 }
 
@@ -535,6 +693,7 @@ function renderTest(blockId){
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+prepareVoices();
 
 /* старт */
 route();

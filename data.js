@@ -5,8 +5,8 @@ const BLOCKS = [
     id: "b1",
     title: "Блок 1. Быть и называться",
     weeks: "недели 1–4",
-    units: "Юниты 1–9",
-    goal: "Рассказать о себе пятью фразами, спросить имя, откуда и чем занимаешься.",
+    units: "Юниты 1–4 сейчас · 5–9 по мере прохождения",
+    goal: "Представиться, спросить имя и откуда человек, описать, что делаешь сейчас.",
     lessons: ["u1", "u2", "u3", "u4"]
   },
   {
@@ -95,6 +95,11 @@ const LESSONS = [
       { w: "from", tr: "/frɒm/ (фром)", ru: "из", ex: "I am from Russia.", exRu: "Я из России." },
       { w: "hello", tr: "/həˈləʊ/ (хэлоу)", ru: "привет", ex: "Hello, I'm Arseniy.", exRu: "Привет, я Арсений." },
       { w: "friend", tr: "/frend/ (френд)", ru: "друг", ex: "He is my friend.", exRu: "Он мой друг." }
+    ],
+    listening: [
+      { type: "choice", audio: "I am a student.", q: "Послушай фразу и выбери перевод.", opts: ["Я учитель.", "Я студент.", "Я дома."], answer: 1, explain: "I am a student — «Я студент»." },
+      { type: "choice", audio: "Where are you from?", q: "Послушай вопрос и выбери перевод.", opts: ["Как тебя зовут?", "Откуда ты?", "Ты учитель?"], answer: 1, explain: "Where are you from? — «Откуда ты?»." },
+      { type: "fill", audio: "I am a student.", q: "Послушай фразу и запиши её по-английски.", answers: ["i am a student", "i'm a student"], explain: "I am a student. Можно также записать сокращённо: I'm a student." }
     ],
     examples: [
       { en: "I am a student.", ru: "Я студент." },
@@ -204,6 +209,11 @@ const LESSONS = [
       { w: "fine", tr: "/faɪn/ (файн)", ru: "хорошо", ex: "I'm fine, thank you.", exRu: "Я в порядке, спасибо." },
       { w: "sorry", tr: "/ˈsɒri/ (сорри)", ru: "извини", ex: "Sorry, I'm late.", exRu: "Извини, я опоздал." }
     ],
+    listening: [
+      { type: "choice", audio: "Is she from Italy?", q: "Послушай вопрос и выбери перевод.", opts: ["Она из Италии?", "Он из России?", "Ты студент?"], answer: 0, explain: "Is she from Italy? — «Она из Италии?»." },
+      { type: "choice", audio: "My name is Anna.", q: "Послушай фразу и выбери перевод.", opts: ["Анна — моя подруга.", "Меня зовут Анна.", "Анна дома."], answer: 1, explain: "My name is Anna — «Меня зовут Анна»." },
+      { type: "fill", audio: "Where are you from?", q: "Послушай вопрос и запиши его по-английски.", answers: ["where are you from"], explain: "Where are you from? — «Откуда ты?»." }
+    ],
     examples: [
       { en: "Are you a student?", ru: "Ты студент?" },
       { en: "Is she from Italy?", ru: "Она из Италии?" },
@@ -298,13 +308,54 @@ const LESSONS = [
       { w: "work", tr: "/wɜːk/ (уорк)", ru: "работать", ex: "He is working now.", exRu: "Он сейчас работает." },
       { w: "now", tr: "/naʊ/ (нау)", ru: "сейчас", ex: "I am busy now.", exRu: "Я сейчас занят." },
       { w: "eat", tr: "/iːt/ (ит)", ru: "есть, кушать", ex: "We are eating lunch.", exRu: "Мы обедаем." },
-      { w: "look", tr: "/lʊk/ (лук)", ru: "смотреть", ex: "I am looking at the photo.", exRu: "Я смотрю на фото." }
+      { w: "look", tr: "/lʊk/ (лук)", ru: "смотреть", ex: "I am looking at the photo.", exRu: "Я смотрю на фото." },
+      { w: "listen", tr: "/ˈlɪsn/ (лисн)", ru: "слушать", ex: "I am listening.", exRu: "Я слушаю." }
+    ],
+    listening: [
+      { type: "choice", audio: "She is writing a message.", q: "Послушай фразу и выбери перевод.", opts: ["Она пишет сообщение.", "Она читает книгу.", "Она слушает музыку."], answer: 0, explain: "She is writing a message — «Она пишет сообщение»." },
+      { type: "choice", audio: "They are eating lunch.", q: "Послушай фразу и выбери перевод.", opts: ["Они идут домой.", "Они обедают.", "Они работают."], answer: 1, explain: "They are eating lunch — «Они обедают»." },
+      { type: "fill", audio: "She is writing a message.", q: "Послушай фразу и запиши её по-английски.", answers: ["she is writing a message", "she's writing a message"], explain: "She is writing a message — «Она пишет сообщение»." }
     ],
     examples: [
       { en: "I am reading a book.", ru: "Я читаю книгу." },
       { en: "She is not working today.", ru: "Она сегодня не работает." },
       { en: "They are eating lunch.", ru: "Они обедают." },
       { en: "Are you listening?", ru: "Ты слушаешь?" }
+    ],
+    homework: [
+      {
+        id: "3.1",
+        task: "Добавь окончание -ing",
+        items: [
+          { q: "read →", a: ["reading"] },
+          { q: "write →", a: ["writing"] },
+          { q: "make →", a: ["making"] },
+          { q: "run →", a: ["running"] },
+          { q: "lie →", a: ["lying"] }
+        ]
+      },
+      {
+        id: "3.2",
+        task: "Вставь am / is / are и глагол с -ing",
+        items: [
+          { q: "I ___ ___ a book now. (read)", a: ["am reading"] },
+          { q: "She ___ ___ a message. (write)", a: ["is writing"] },
+          { q: "They ___ ___ lunch. (eat)", a: ["are eating"] },
+          { q: "He ___ ___ now. (work)", a: ["is working"] },
+          { q: "We ___ ___ at the photo. (look)", a: ["are looking"] }
+        ]
+      },
+      {
+        id: "3.3",
+        task: "Переведи на английский",
+        items: [
+          { q: "Я сейчас читаю книгу.", a: ["i am reading a book now", "i'm reading a book now"] },
+          { q: "Она сегодня не работает.", a: ["she is not working today", "she isn't working today", "she's not working today"] },
+          { q: "Он сейчас работает.", a: ["he is working now", "he's working now"] },
+          { q: "Мы обедаем.", a: ["we are eating lunch", "we're eating lunch"] },
+          { q: "Ты слушаешь?", a: ["are you listening"] }
+        ]
+      }
     ],
     exercises: [
       { type: "fill", q: "I ___ reading a book. (am / is / are)", answers: ["am"], explain: "I → am." },
@@ -353,11 +404,50 @@ const LESSONS = [
       { w: "listen", tr: "/ˈlɪsn/ (лисн)", ru: "слушать", ex: "I am listening to music.", exRu: "Я слушаю музыку." },
       { w: "music", tr: "/ˈmjuːzɪk/ (мьюзик)", ru: "музыка", ex: "He likes music.", exRu: "Он любит музыку." }
     ],
+    listening: [
+      { type: "choice", audio: "What are you doing?", q: "Послушай вопрос и выбери перевод.", opts: ["Куда ты идёшь?", "Что ты делаешь?", "Ты слушаешь музыку?"], answer: 1, explain: "What are you doing? — «Что ты делаешь?»." },
+      { type: "choice", audio: "I am going home.", q: "Послушай фразу и выбери перевод.", opts: ["Я иду домой.", "Я работаю дома.", "Я слушаю музыку."], answer: 0, explain: "I am going home — «Я иду домой»." },
+      { type: "fill", audio: "What are you doing?", q: "Послушай вопрос и запиши его по-английски.", answers: ["what are you doing"], explain: "What are you doing? — «Что ты делаешь?»." }
+    ],
     examples: [
       { en: "What are you doing?", ru: "Что ты делаешь?" },
       { en: "Is he working now?", ru: "Он сейчас работает?" },
       { en: "Where are they going?", ru: "Куда они идут?" },
       { en: "I'm not listening to music.", ru: "Я не слушаю музыку." }
+    ],
+    homework: [
+      {
+        id: "4.1",
+        task: "Поставь am / is / are в начало вопроса",
+        items: [
+          { q: "___ you working?", a: ["are"] },
+          { q: "___ she reading?", a: ["is"] },
+          { q: "___ they going home?", a: ["are"] },
+          { q: "___ he listening to music?", a: ["is"] },
+          { q: "___ we eating now?", a: ["are"] }
+        ]
+      },
+      {
+        id: "4.2",
+        task: "Вставь am, is или are",
+        items: [
+          { q: "What ___ you doing?", a: ["are"] },
+          { q: "Where ___ she going?", a: ["is"] },
+          { q: "Why ___ they laughing?", a: ["are"] },
+          { q: "Who ___ he talking to?", a: ["is"] },
+          { q: "What ___ they doing?", a: ["are"] }
+        ]
+      },
+      {
+        id: "4.3",
+        task: "Ответь коротко или переведи",
+        items: [
+          { q: "Are you listening? (да) → Yes, ___", a: ["i am"] },
+          { q: "Is she working? (нет) → No, ___", a: ["she isn't", "she is not", "she's not"] },
+          { q: "Что ты делаешь? →", a: ["what are you doing"] },
+          { q: "Я иду домой. →", a: ["i am going home", "i'm going home"] }
+        ]
+      }
     ],
     exercises: [
       { type: "translate", q: "Что ты делаешь?", answers: ["what are you doing"], explain: "What + are + you + doing." },

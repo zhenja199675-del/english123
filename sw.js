@@ -1,5 +1,5 @@
-const CACHE = 'en-app-v5';
-const FILES = ['./', 'index.html', 'theme.css', 'data.js?v=3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
+const CACHE = 'en-app-v15';
+const FILES = ['./', 'index.html', 'theme.css', 'data.js?v=5', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'murphy/u1-2.jpg', 'murphy/u1-3.jpg', 'murphy/u2-4.jpg', 'murphy/u2-5.jpg',
   'murphy/u3-6.jpg', 'murphy/u3-7.jpg', 'murphy/u4-8.jpg', 'murphy/u4-9.jpg',
   'murphy/key-a.jpg', 'murphy/key-b.jpg'];
