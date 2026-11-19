@@ -45,7 +45,7 @@
 
 ## Обновление
 
-После правок `data.js` или `exercises.js` подними версии: `data.js?v=5`, `exercises.js?v=1` в `index.html` и `sw.js`, плюс `CACHE` в `sw.js`.
+После правок `data.js`, `exercises.js` или `theme.css` подними версии: `data.js?v=5`, `exercises.js?v=1`, `theme.css?v=3` в `index.html` и `sw.js`, плюс `CACHE` в `sw.js`.
 
 ## Локальный запуск
 
