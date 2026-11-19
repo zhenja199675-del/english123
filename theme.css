@@ -136,6 +136,13 @@ textarea{resize:vertical;line-height:1.55}
 .mark{width:20px;text-align:center;font-weight:700;font-size:15px}
 
 /* ---------- страницы книги ---------- */
+.book-card{padding:0;overflow:hidden}
+.book-details summary{padding:16px;cursor:pointer;font-weight:600;color:var(--muted);list-style:none}
+.book-details summary::-webkit-details-marker{display:none}
+.book-details summary::before{content:'▸';display:inline-block;margin-right:8px;color:var(--accent);transition:transform .15s}
+.book-details[open] summary::before{transform:rotate(90deg)}
+.book-details[open] summary{border-bottom:1px solid var(--line);color:var(--text)}
+.book-images{padding:12px;display:grid;gap:10px}
 .page{width:100%;height:auto;display:block;border-radius:10px;background:#fff;
   border:1px solid var(--line);transition:opacity .15s}
 a:hover > .page{opacity:.92}
@@ -167,6 +174,10 @@ a:hover > .page{opacity:.92}
   padding:14px 8px;text-align:center}
 .kpi b{display:block;font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .kpi span{font-size:11px;color:var(--dim);display:block;margin-top:2px}
+.overall-card{margin-top:14px}
+.lesson-row .bar{margin-top:10px}
+a.badge{color:var(--accent);border-color:#2f5540;background:var(--accent-soft)}
+a.badge:hover{background:#22452f}
 
 /* ---------- прочее ---------- */
 .back{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;
@@ -204,8 +215,126 @@ nav button.on::before{content:'';position:absolute;top:0;left:50%;transform:tran
 nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;
   stroke-linecap:round;stroke-linejoin:round}
 
+/* ---------- главная: путь ---------- */
+.home-hero{margin:4px 0 14px}
+.eyebrow{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);font-weight:650}
+.today-card{background:linear-gradient(160deg,#1b2c22,#141a21 62%);
+  border:1px solid #2e4a3a;border-radius:22px;padding:18px;margin:14px 0;
+  box-shadow:0 18px 40px -30px rgba(142,214,171,.35)}
+.today-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.streak-pill{font-size:12px;color:#cdebd9;border:1px solid #2f5540;background:#16261c;
+  border-radius:99px;padding:4px 10px;white-space:nowrap}
+.today-main{display:flex;align-items:center;gap:14px;margin:14px 0 12px}
+.today-num{font-size:34px;font-weight:700;letter-spacing:-.04em;color:var(--accent);
+  font-variant-numeric:tabular-nums;line-height:1}
+.today-main b{font-size:17px}
+.today-bar .bar{margin-top:8px}
+.btn.xl{display:flex;width:100%;padding:15px 20px;font-size:16px;border-radius:14px}
+.today-links{display:flex;gap:18px;margin-top:13px;font-size:13px;color:var(--muted)}
+.today-links a{color:var(--muted)}
+.today-links a:hover{color:var(--accent)}
+.daily-goal{display:flex;align-items:center;gap:14px;padding:14px 16px;margin:6px 0 22px;
+  border:1px solid var(--line);border-radius:16px;background:var(--bg-soft)}
+.daily-dots{display:flex;gap:4px}
+.daily-dots span{width:8px;height:24px;border-radius:99px;background:#1a222c}
+.daily-dots span.on{background:linear-gradient(180deg,#a9e8c2,#5fae83)}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:10px 0 6px}
+.section-head h2{border:0;padding:0;margin:0;font-size:18px}
+.path-block{margin:16px 0 24px}
+.path-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.path-goal{margin:4px 0 12px}
+.path{position:relative;display:flex;flex-direction:column;gap:10px;padding-left:4px}
+.path::before{content:'';position:absolute;left:33px;top:24px;bottom:24px;width:2px;
+  background:linear-gradient(180deg,#2f5341,#232a34);z-index:0}
+.node{position:relative;z-index:1;display:flex;align-items:center;gap:13px;
+  padding:11px 13px 11px 11px;border:1px solid var(--line);border-radius:18px;
+  background:var(--card);color:inherit;transition:border-color .15s,background .15s,transform .08s}
+.node:hover{border-color:var(--line-hi);background:var(--card-hi)}
+.node:active{transform:scale(.995)}
+.node-dot{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
+  background:#141a21;border:2px solid #2a3440;font-weight:650;font-size:15px;color:var(--muted)}
+.node-dot svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round}
+.node.current{border-color:#3a5d49;background:linear-gradient(150deg,#1b2a22,var(--card) 68%)}
+.node.current .node-dot{background:var(--accent);color:#0d1712;border-color:#a9e8c2;
+  box-shadow:0 0 0 5px rgba(142,214,171,.1)}
+.node.done .node-dot{background:var(--accent-soft);color:var(--accent);border-color:#2f5540}
+.node-info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.node-info b{font-weight:620;font-size:15px}
+.node-info small{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-sub{display:flex;gap:10px;font-size:11.5px;color:var(--dim);margin-top:3px}
+.node-arrow{color:var(--dim);font-size:14px}
+.node.current .node-arrow{color:var(--accent)}
+.node.test .node-dot{border-radius:14px}
+.future-list{display:grid;gap:8px}
+.future{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:12px 14px;border:1px dashed var(--line);border-radius:14px;color:var(--muted)}
+.footnote{margin-top:24px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--bg-soft)}
+.footnote p{margin:6px 0 0}
+
+/* ---------- плеер занятия ---------- */
+body.playing{padding-bottom:0}
+body.playing header,body.playing nav{display:none}
+body.playing main{max-width:640px;padding:14px 18px 0;min-height:100vh}
+.player{min-height:calc(100vh - 20px);display:flex;flex-direction:column}
+.player-top{display:flex;align-items:center;gap:12px;padding:2px 0 10px}
+.icon-btn{width:38px;height:38px;flex:0 0 auto;border-radius:12px;border:1px solid var(--line);
+  background:var(--bg-soft);color:var(--muted);font-size:22px;line-height:1;cursor:pointer;
+  display:grid;place-items:center}
+.icon-btn:hover{color:var(--text);border-color:var(--line-hi)}
+.player-progress{flex:1;height:8px;border-radius:99px;background:#0e1319;
+  border:1px solid var(--line);overflow:hidden}
+.player-progress i{display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#5fae82,var(--accent));transition:width .35s ease}
+.player-count{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rule-btn{font-size:16px;font-weight:700;color:var(--accent);border-color:#2f5540;background:var(--accent-soft)}
+.sheet{position:fixed;inset:0;z-index:80;background:rgba(4,6,9,.62);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center}
+.sheet-panel{width:min(720px,100%);max-height:86vh;overflow:auto;background:var(--card);
+  border:1px solid var(--line);border-radius:22px 22px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom))}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  position:sticky;top:0;background:var(--card);padding-bottom:10px;z-index:2}
+.sheet-body h2{font-size:17px;margin-top:20px}
+.sheet-body h2:first-child{margin-top:4px}
+.player-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 0 24px;
+  animation:taskIn .22s ease}
+@keyframes taskIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+.player-body .eyebrow{margin-bottom:10px}
+.task-q{font-size:24px;line-height:1.35;border:0;padding:0;margin:0 0 18px;font-weight:650;
+  letter-spacing:-.01em}
+.listen-row{display:flex;align-items:center;gap:10px;margin:0 0 20px;flex-wrap:wrap}
+.listen-big{display:inline-flex;align-items:center;gap:10px;padding:13px 20px;font-size:15px;
+  background:var(--accent-soft);border-color:#2f5540;color:#d8f6e5}
+.listen-big svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.listen-big:hover{background:#22452f}
+.play-opts{margin-top:2px}
+.play-opts .opt{padding:16px;font-size:16px}
+.play-input{padding:16px;font-size:18px;margin-top:2px}
+.player-actions{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;
+  padding:14px 0 calc(16px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(11,13,17,0),var(--bg) 42%)}
+.player-actions .btn{flex:1}
+.player-actions .ghost{flex:0 0 auto;padding:15px 16px}
+.play-fb{margin-top:16px}
+.player.done{justify-content:center}
+.done-card{text-align:center;padding:24px;border:1px solid var(--line);border-radius:24px;
+  background:linear-gradient(170deg,#17241c,var(--card) 60%)}
+.done-badge{width:58px;height:58px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent);color:#0d1712;font-size:26px;font-weight:700}
+.done-title{font-size:22px;border:0;padding:0;margin:0 0 6px}
+.done-score{font-size:52px;font-weight:700;color:var(--accent);letter-spacing:-.04em;margin:12px 0 4px}
+.done-card .bar{margin-bottom:14px}
+.done-card .btn{margin-top:10px}
+.lesson-start{margin:6px 0 10px}
+
 @media (min-width:640px){
   main{padding:28px 24px 48px}
   h1{font-size:29px}
   .ex,.card{padding:18px}
+  .task-q{font-size:28px}
+  .player-actions{position:static;background:none}
 }

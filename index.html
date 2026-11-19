@@ -32,6 +32,7 @@
 </nav>
 
 <script src="data.js?v=5"></script>
+<script src="exercises.js?v=1"></script>
 <script>
 /* ---------- хранилище ---------- */
 const KEY = 'en_app_v1';
@@ -80,12 +81,35 @@ function pickEnglishVoice(){
     english.find(v => /^en[-_]gb/i.test(v.lang)) ||
     english[0] || null;
 }
-function speakText(text){
+let AUDIO_INDEX = null;
+let AUDIO_PLAYER = null;
+function loadAudioIndex(){
+  fetch('audio/manifest.json', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { if (data && data.items) AUDIO_INDEX = data.items; })
+    .catch(() => {});
+}
+function playAudio(text, slow){
+  const file = AUDIO_INDEX && AUDIO_INDEX[text];
+  if (file){
+    if (AUDIO_PLAYER){
+      AUDIO_PLAYER.pause();
+      AUDIO_PLAYER = null;
+    }
+    const player = new Audio(file);
+    player.playbackRate = slow ? 0.72 : 1;
+    player.play().catch(() => speakText(text));
+    AUDIO_PLAYER = player;
+    return;
+  }
+  speakText(text, slow);
+}
+function speakText(text, slow){
   if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-GB';
-  utterance.rate = 0.86;
+  utterance.rate = slow ? 0.66 : 0.86;
   const voice = pickEnglishVoice();
   if (voice) utterance.voice = voice;
   window.speechSynthesis.speak(utterance);
@@ -96,14 +120,8 @@ function prepareVoices(){
   window.speechSynthesis.addEventListener('voiceschanged', () => pickEnglishVoice());
 }
 function wireAudio(root){
-  const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   root.querySelectorAll('[data-speak]').forEach(button => {
-    if (!supported){
-      button.disabled = true;
-      button.title = 'Озвучивание не поддерживается этим браузером';
-      return;
-    }
-    button.addEventListener('click', () => speakText(button.dataset.speak));
+    button.addEventListener('click', () => playAudio(button.dataset.speak, button.dataset.slow === '1'));
   });
 }
 function norm(s){
@@ -133,7 +151,8 @@ function plural(n, one, few, many){
   return many;
 }
 function hwItems(l){ return l.homework ? l.homework.reduce((s, b) => s + b.items.length, 0) : 0; }
-function lessonTotal(l){ return l.exercises.length + hwItems(l) + (l.listening || []).length; }
+function bookItems(l){ return ((window.BOOK_EXERCISES || {})[l.id] || []).length; }
+function lessonTotal(l){ return l.exercises.length + hwItems(l) + (l.listening || []).length + bookItems(l); }
 
 /* ---------- маршрутизация ---------- */
 function go(view, param){
@@ -152,7 +171,9 @@ function route(){
     currentParam = param;
     render(view, param);
   }
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === view));
+  const focusMode = view === 'play' || view === 'test';
+  document.body.classList.toggle('playing', focusMode);
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === (focusMode ? 'course' : view)));
   if (anchor){
     const el = document.getElementById(anchor);
     if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -175,86 +196,95 @@ function render(view, param){
   if (view === 'errors') return renderErrors();
   if (view === 'progress') return renderProgress();
   if (view === 'test') return renderTest(param);
+  if (view === 'play') return renderPlay(param);
   return renderCourse();
 }
+
+function nextLesson(){
+  return LESSONS.find(l => !S.done[l.id]) || LESSONS[LESSONS.length - 1];
+}
+function todayCount(){ return S.log[today()] || 0; }
+function answeredCount(l){ return Object.keys(S.answers[l.id] || {}).length; }
 
 function renderCourse(){
   header('Курс');
   const all = LESSONS.length;
   const done = LESSONS.filter(l => S.done[l.id]).length;
-  const pctAll = all ? Math.round(done * 100 / all) : 0;
+  const next = nextLesson();
+  const nextDone = answeredCount(next), nextTotal = lessonTotal(next);
+  const nextPct = nextTotal ? Math.round(nextDone * 100 / nextTotal) : 0;
+  const goal = 10, todayN = Math.min(todayCount(), goal);
 
-  let html = '<h1>Английский с нуля</h1>' +
-    '<p class="muted">Грамматика по Murphy, озвучивание, аудирование и практика. Сейчас заполнены Unit 1–4; следующие добавляются по мере прохождения.</p>' +
-    '<div class="card study-guide"><div class="row"><b>Начни с Unit 1</b><span class="badge">20–30 минут</span></div>' +
-    '<p class="small">Слова повторяй в Anki — здесь они нужны в примерах и аудио. Не проходи весь экран за раз: за занятие достаточно 5–6 предложений.</p>' +
-    '<details><summary>План занятия на 25 минут</summary><ol>' +
-    '<li><b>5 минут:</b> повтори в Anki 5 слов и 2 фразы с прошлых занятий.</li>' +
-    '<li><b>8 минут:</b> разбери одну конструкцию или 6–8 новых слов.</li>' +
-    '<li><b>10 минут:</b> послушай фразы и сделай 5–6 заданий самостоятельно.</li>' +
-    '<li><b>2 минуты:</b> запиши 3 фразы, которые хочешь помнить, и что повторить завтра.</li>' +
-    '</ol><p class="muted small">Озвучивает голос устройства: произношение может отличаться. После теста по блоку на 80% можно идти дальше; если ниже — повтори ошибки.</p></details></div>' +
-    '<div class="card"><div class="row"><div><b>Курс A0 → A2</b>' +
-    '<div class="muted small">план: 6 блоков · 24 недели</div></div>' +
-    '<span class="badge' + (done === all && all ? ' ok' : '') + '">' + done + ' из ' + all + '</span></div>' +
-    '<div class="bar"><i style="width:' + pctAll + '%"></i></div></div>';
+  let html = '<div class="home-hero"><div class="eyebrow">A0 → A2 · по 20–30 минут</div>' +
+    '<h1>Английский с нуля</h1>' +
+    '<p class="muted">Один юнит — несколько коротких занятий. Слова повторяй в Anki, здесь — правило, звук и практика.</p></div>';
+
+  html += '<div class="today-card">' +
+    '<div class="today-head"><span class="eyebrow">Следующий урок</span>' +
+    '<span class="streak-pill">🔥 ' + plural(streak(), 'день', 'дня', 'дней') + '</span></div>' +
+    '<div class="today-main"><span class="today-num">' + String(next.unit).padStart(2,'0') + '</span>' +
+    '<div><b>Unit ' + next.unit + '. ' + esc(next.title) + '</b>' +
+    '<div class="muted small">' + esc(next.subtitle) + '</div></div></div>' +
+    '<div class="today-bar"><div class="row"><span class="small muted">Отвечено ' + nextDone + ' из ' + nextTotal + '</span>' +
+    '<span class="small muted">≈ ' + Math.ceil(nextTotal / SESSION_SIZE) + ' ' + plural(Math.ceil(nextTotal / SESSION_SIZE), 'занятие', 'занятия', 'занятий') + '</span></div><div class="bar"><i style="width:' + nextPct + '%"></i></div></div>' +
+    '<a class="btn primary xl" href="#play/' + next.id + '">' + (nextDone ? 'Продолжить занятие' : 'Начать занятие') + '</a>' +
+    '<div class="today-links"><a href="#lesson/' + next.id + '">Правило и слова</a><a href="#test/b1">Тест блока</a></div>' +
+    '</div>';
+
+  html += '<div class="daily-goal"><div class="daily-dots">';
+  for (let i = 0; i < goal; i++) html += '<span class="' + (i < todayN ? 'on' : '') + '"></span>';
+  html += '</div><div><b>' + (todayN >= goal ? 'Цель дня выполнена' : 'Цель дня') + '</b>' +
+    '<div class="muted small">' + todayN + ' из ' + goal + ' проверок</div></div></div>';
+
+  html += '<div class="section-head"><h2>Путь</h2><span class="muted small">' + done + ' из ' + all + ' уроков</span></div>';
 
   BLOCKS.forEach(b => {
     const ls = LESSONS.filter(l => l.block === b.id);
-    const okc = ls.filter(l => S.done[l.id]).length;
-    const pct = ls.length ? Math.round(okc * 100 / ls.length) : 0;
-
+    if (!ls.length) return;
     const tr = S.tests && S.tests[b.id];
-    html += '<div class="card"><div class="row"><div><b>' + esc(b.title) + '</b>' +
-      '<div class="muted small">' + esc(b.weeks) + ' · ' + esc(b.units) + '</div></div>' +
-      '<span class="badge' + (ls.length && okc === ls.length ? ' ok' : '') + '">' + okc + '/' + ls.length + '</span></div>' +
-      '<div class="muted small" style="margin-top:10px">' + esc(b.goal) + '</div>' +
-      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
-      (tr ? '<div class="muted small" style="margin-top:8px">Тест: ' + tr.pct + '% · ' + tr.date + '</div>' : '') +
-      '</div>';
-
-    if (!ls.length){
-      html += '<p class="muted small">Уроки появятся, когда дойдём до блока.</p>';
-      return;
-    }
+    html += '<div class="path-block"><div class="path-title"><b>' + esc(b.title) + '</b>' +
+      '<span class="muted small">' + esc(b.weeks) + '</span></div>' +
+      '<p class="muted small path-goal">' + esc(b.goal) + '</p><div class="path">';
 
     ls.forEach(l => {
       const sc = lessonScore(l.id);
-      const right = S.done[l.id]
-        ? '<span class="badge ok">пройден' + (sc ? ' · ' + sc.pct + '%' : '') + '</span>'
-        : (sc ? '<span class="badge">' + sc.pct + '%</span>' : '<span class="dim">→</span>');
-      html += '<a class="card tap" href="#lesson/' + l.id + '"><div class="row">' +
-        '<div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
-        '<div class="muted small">' + esc(l.subtitle) + '</div></div>' + right + '</div></a>';
+      const pct = sc ? sc.pct : 0;
+      const state = S.done[l.id] ? 'done' : (l.id === next.id ? 'current' : '');
+      html += '<a class="node ' + state + '" href="#lesson/' + l.id + '">' +
+        '<span class="node-dot">' + (S.done[l.id]
+          ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+          : l.unit) + '</span>' +
+        '<span class="node-info"><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+        '<small>' + esc(l.subtitle) + '</small>' +
+        '<span class="node-sub"><span>' + lessonTotal(l) + ' ' + plural(lessonTotal(l), 'задание', 'задания', 'заданий') + '</span>' +
+        '<span>' + (S.done[l.id] ? 'пройден · ' + pct + '%' : (sc ? pct + '%' : 'не начат')) + '</span></span></span>' +
+        '<span class="node-arrow">' + (state === 'current' ? '▶' : '→') + '</span></a>';
     });
 
-    if (ls.length) html += '<a class="btn full" href="#test/' + b.id + '">Тест по блоку · ' + TEST_SIZE + ' вопросов</a>';
+    html += '<a class="node test ' + (tr && tr.pct >= 80 ? 'done' : '') + '" href="#test/' + b.id + '">' +
+      '<span class="node-dot">★</span><span class="node-info"><b>Тест блока</b>' +
+      '<small>' + TEST_SIZE + ' вопросов · нужно 80%</small>' +
+      '<span class="node-sub"><span>' + (tr ? 'результат ' + tr.pct + '%' : 'не пройден') + '</span></span></span>' +
+      '<span class="node-arrow">→</span></a>';
+    html += '</div></div>';
   });
+
+  const future = BLOCKS.filter(b => !LESSONS.some(l => l.block === b.id));
+  if (future.length){
+    html += '<div class="section-head"><h2>Дальше</h2><span class="muted small">по мере прохождения</span></div>' +
+      '<div class="future-list">' + future.map(b => '<div class="future"><b>' + esc(b.title) + '</b>' +
+      '<span class="muted small">' + esc(b.units) + '</span></div>').join('') + '</div>';
+  }
+
+  html += '<div class="footnote"><b>План занятия на 25 минут</b>' +
+    '<p class="small muted">5 минут Anki · 8 минут правило и слова · 10 минут задания · 2 минуты итог.</p></div>';
 
   $('#view').innerHTML = html;
 }
 
-function renderLesson(id){
-  const l = lessonById(id);
-  if (!l) { go('course'); return; }
-  header('Unit ' + l.unit);
-  let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
-  html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>' +
-    '<div class="meta"><span>' + l.words.length + ' ' + plural(l.words.length, 'слово', 'слова', 'слов') + '</span>' +
-    '<span>' + lessonTotal(l) + ' ' + plural(lessonTotal(l), 'задание', 'задания', 'заданий') + '</span><span>20–30 минут</span></div>';
-
-  html += '<div class="chips">' +
-    (l.murphy ? '<a class="chip" href="#s-murphy">Мерфи</a>' : '') +
-    (l.murphy ? '<a class="chip" href="#s-homework">Домашка</a>' : '') +
-    (l.listening && l.listening.length ? '<a class="chip" href="#s-listening">Слушаем</a>' : '') +
-    (l.homework ? '<a class="chip" href="#s-trainer">Тренажёр</a>' : '') +
-    '<a class="chip" href="#s-words">Слова</a>' +
-    '<a class="chip" href="#s-extra">Дополнительно</a></div>';
-
-  if (l.murphy) html += '<div id="s-murphy">' + murphyBlock(l) + '</div>';
-
+function theoryHtml(l){
   const theory = l.sections || l.theory || [];
-  html += '<div id="s-notes">';
+  let html = '';
   theory.forEach(t => {
     if (t.h) html += '<h2>' + esc(t.h) + '</h2>';
     if (t.p) html += '<p>' + t.p + '</p>';
@@ -264,7 +294,30 @@ function renderLesson(id){
         '</tbody></table>';
     }
   });
-  html += '</div>';
+  return html;
+}
+function renderLesson(id){
+  const l = lessonById(id);
+  if (!l) { go('course'); return; }
+  header('Unit ' + l.unit);
+  let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>';
+  html += '<h1>Unit ' + l.unit + '. ' + esc(l.title) + '</h1><p class="muted">' + esc(l.subtitle) + '</p>' +
+    '<div class="meta"><span>' + l.words.length + ' ' + plural(l.words.length, 'слово', 'слова', 'слов') + '</span>' +
+    '<span>' + lessonTotal(l) + ' ' + plural(lessonTotal(l), 'задание', 'задания', 'заданий') + '</span>' +
+    '<span>≈ ' + Math.ceil(lessonTotal(l) / SESSION_SIZE) + ' ' + plural(Math.ceil(lessonTotal(l) / SESSION_SIZE), 'занятие', 'занятия', 'занятий') + '</span></div>' +
+    '<a class="btn primary xl lesson-start" href="#play/' + l.id + '">Начать занятие</a>';
+
+  html += '<div class="chips">' +
+    (l.murphy ? '<a class="chip" href="#s-book">Книга</a>' : '') +
+    (l.listening && l.listening.length ? '<a class="chip" href="#s-listening">Слушаем</a>' : '') +
+    (bookItems(l) ? '<a class="chip" href="#s-bookwork">Практика</a>' : '') +
+    (l.homework ? '<a class="chip" href="#s-trainer">Тренажёр</a>' : '') +
+    '<a class="chip" href="#s-words">Слова</a>' +
+    '<a class="chip" href="#s-extra">Дополнительно</a></div>';
+
+  if (l.murphy) html += murphyBlock(l);
+
+  html += '<div id="s-notes">' + theoryHtml(l) + '</div>';
 
   if (l.listening && l.listening.length){
     html += '<h2 id="s-listening">Аудирование</h2><p class="muted small">Сначала нажми «Слушать», не подглядывай в английскую фразу и выбери перевод. Можно переслушать.</p>' +
@@ -282,6 +335,12 @@ function renderLesson(id){
 
   if (l.homework) html += trainerBlock(l);
 
+  if (bookItems(l)){
+    html += '<h2 id="s-bookwork">Практика по юниту</h2>' +
+      '<p class="muted small">Задания на ту же грамматику, что в книге, но с проверкой и без переписывания страниц.</p>' +
+      '<div id="bookWrap"></div>';
+  }
+
   html += '<h2 id="s-extra">Дополнительно</h2><p class="muted small">Мои упражнения на те же темы. Пиши полностью, без сокращений.</p>';
   html += '<div id="exWrap"></div>';
   html += '<div id="trainWrap"></div>';
@@ -289,7 +348,19 @@ function renderLesson(id){
   $('#view').innerHTML = html;
   wireAudio($('#view'));
 
-  if (l.murphy) wireMurphy(l);
+  if (bookItems(l)){
+    const bookWrap = $('#bookWrap');
+    ((window.BOOK_EXERCISES || {})[l.id] || []).forEach((ex, i) => {
+      const key = 'b' + i;
+      const savedText = S.given && S.given[l.id + '|' + key];
+      const savedOk = !!(S.answers[l.id] && S.answers[l.id][key]);
+      const restore = savedText ? { given: savedText, ok: savedOk } : null;
+      bookWrap.appendChild(exCard(ex, (ok, given, correct) => {
+        record(l.id, key, ok, ex, given, correct);
+        refreshLessonEnd(l);
+      }, restore));
+    });
+  }
 
   if (l.listening && l.listening.length){
     const listenWrap = $('#listenWrap');
@@ -342,12 +413,159 @@ function refreshLessonEnd(l){
   }
 }
 
+/* ---------- режим занятия ---------- */
+let PLAY = null;
+function buildQueue(l){
+  const q = [];
+  (l.listening || []).forEach((ex, i) => q.push({ key:'a' + i, section:'Аудирование', ex }));
+  ((window.BOOK_EXERCISES || {})[l.id] || []).forEach((ex, i) =>
+    q.push({ key:'b' + i, section:ex.group || 'Практика', ex }));
+  (l.homework || []).forEach(g => g.items.forEach((it, ii) => q.push({
+    key:'h' + g.id + '.' + ii, section:g.task,
+    ex:{ type:'fill', q:it.q, answers:it.a, explain:it.explain, sample:it.sample }
+  })));
+  (l.exercises || []).forEach((ex, i) => q.push({ key:'u' + i, section:'Повторение', ex }));
+  return q;
+}
+const SESSION_SIZE = 8;
+function renderPlay(id){
+  const l = lessonById(id);
+  if (!l){ go('course'); return; }
+  const all = buildQueue(l);
+  if (!all.length){ go('lesson/' + id); return; }
+  const unanswered = all.filter(it => !(S.answers[l.id] && S.answers[l.id][it.key] !== undefined));
+  const queue = (unanswered.length ? unanswered : all).slice(0, SESSION_SIZE);
+  header('Unit ' + l.unit);
+  PLAY = { l, queue, all, idx:0, right:0, total:0, checked:false, pick:null };
+  renderPlayCard();
+}
+function playProgress(l, queue){
+  const answered = queue.filter(it => S.answers[l.id] && S.answers[l.id][it.key] !== undefined).length;
+  return { answered, total:queue.length, pct:queue.length ? Math.round(answered*100/queue.length) : 0 };
+}
+function renderPlayCard(){
+  if (!PLAY){ go('course'); return; }
+  const l = PLAY.l, queue = PLAY.queue;
+  if (PLAY.idx >= queue.length) return renderPlayDone();
+  const item = queue[PLAY.idx], ex = item.ex;
+  const doneInSession = Math.round(PLAY.idx * 100 / queue.length);
+  let html = '<div class="player">' +
+    '<div class="player-top"><button class="icon-btn" onclick="go(\'lesson/' + l.id + '\')" aria-label="Выйти">×</button>' +
+    '<div class="player-progress"><i style="width:' + doneInSession + '%"></i></div>' +
+    '<span class="player-count">' + (PLAY.idx + 1) + '/' + queue.length + '</span>' +
+    '<button class="icon-btn rule-btn" onclick="showRule()" aria-label="Правило">?</button></div>' +
+    '<div class="player-body"><span class="eyebrow">' + esc(item.section) + '</span>' +
+    '<h2 class="task-q">' + esc(ex.q) + '</h2>';
+  if (ex.audio){
+    html += '<div class="listen-row">' +
+      '<button class="btn listen-big" data-speak="' + esc(ex.audio) + '">' + SPEAKER_ICON + '<span>Слушать</span></button>' +
+      '<button class="btn ghost" data-speak="' + esc(ex.audio) + '" data-slow="1">Медленно</button></div>';
+  }
+  if (ex.type === 'choice'){
+    html += '<div class="opts play-opts">' + ex.opts.map((o, i) =>
+      '<button class="opt" data-pick="' + i + '">' + esc(o) + '</button>').join('') + '</div>';
+  } else {
+    html += '<input class="play-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' +
+      (ex.audio ? 'запиши услышанное' : 'ответ по-английски') + '">';
+  }
+  html += '<div class="fb play-fb" id="playFb" role="status" aria-live="polite"></div></div>' +
+    '<div class="player-actions"><button class="btn ghost" id="playSkip">Пропустить</button>' +
+    '<button class="btn primary xl" id="playCheck">Проверить</button></div></div>';
+  $('#view').innerHTML = html;
+  wireAudio($('#view'));
+  const input = $('.play-input');
+  if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') checkPlay(); });
+  if (ex.type === 'choice'){
+    document.querySelectorAll('[data-pick]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (PLAY.checked) return;
+        document.querySelectorAll('[data-pick]').forEach(b => b.classList.remove('sel'));
+        btn.classList.add('sel');
+        PLAY.pick = Number(btn.dataset.pick);
+      });
+    });
+  }
+  $('#playCheck').addEventListener('click', checkPlay);
+  $('#playSkip').addEventListener('click', () => {
+    PLAY.idx++; PLAY.checked = false; PLAY.pick = null; renderPlayCard();
+  });
+}
+function showRule(){
+  if (!PLAY) return;
+  const l = PLAY.l;
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.innerHTML = '<div class="sheet-panel"><div class="sheet-head"><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+    '<button class="icon-btn" aria-label="Закрыть">×</button></div>' +
+    '<div class="sheet-body">' + theoryHtml(l) + '</div></div>';
+  sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
+  sheet.querySelector('.icon-btn').addEventListener('click', () => sheet.remove());
+  document.body.appendChild(sheet);
+}
+function checkPlay(){
+  if (!PLAY || PLAY.checked) return;
+  const item = PLAY.queue[PLAY.idx], ex = item.ex;
+  let ok = false, given = '', correct = '';
+  if (ex.type === 'choice'){
+    if (PLAY.pick == null) return;
+    ok = PLAY.pick === ex.answer;
+    given = ex.opts[PLAY.pick];
+    correct = ex.opts[ex.answer];
+    document.querySelectorAll('[data-pick]').forEach((b, i) => {
+      b.disabled = true;
+      if (i === ex.answer) b.classList.add('good');
+      else if (i === PLAY.pick) b.classList.add('bad');
+    });
+  } else {
+    const input = $('.play-input');
+    given = input.value.trim();
+    if (!given) return;
+    ok = (ex.answers || ex.a || []).some(a => norm(a) === norm(given));
+    correct = (ex.answers || ex.a || [])[0] || '';
+    input.disabled = true;
+    input.style.borderColor = ok ? '#2f5540' : '#5a2f2c';
+  }
+  PLAY.checked = true;
+  PLAY.total++; if (ok) PLAY.right++;
+  markAnswer(PLAY.l.id, item.key, ok, ex.q, given, correct);
+  const fb = $('#playFb');
+  fb.className = 'fb play-fb show ' + (ok ? 'ok' : 'no');
+  fb.innerHTML = ok
+    ? '<b>Верно.</b> ' + esc(ex.explain || ex.sample || '')
+    : 'Не так. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
+      (ex.explain ? '<br>' + esc(ex.explain) : '');
+  const actions = document.querySelector('.player-actions');
+  actions.innerHTML = '<button class="btn primary xl" id="playNext">' +
+    (PLAY.idx + 1 >= PLAY.queue.length ? 'Завершить' : 'Дальше') + '</button>';
+  $('#playNext').addEventListener('click', () => {
+    PLAY.idx++; PLAY.checked = false; PLAY.pick = null; renderPlayCard();
+  });
+  $('#playNext').focus();
+}
+function renderPlayDone(){
+  const l = PLAY.l, all = PLAY.all;
+  const pr = playProgress(l, all);
+  const pct = PLAY.total ? Math.round(PLAY.right * 100 / PLAY.total) : pr.pct;
+  const left = all.length - pr.answered;
+  $('#view').innerHTML = '<div class="player done"><div class="done-card">' +
+    '<div class="done-badge">✓</div><h2 class="done-title">Занятие закончено</h2>' +
+    '<p class="muted">' + (PLAY.total ? PLAY.right + ' из ' + PLAY.total + ' верно в этом заходе' : 'Все задания уже отвечены') + '</p>' +
+    '<div class="done-score">' + pct + '%</div>' +
+    '<p class="small muted">Урок пройден на ' + pr.answered + ' из ' + all.length + ' заданий' +
+    (left > 0 ? '. Осталось ещё ' + left + ' — можно продолжить в следующий раз.' : '. Это был последний заход.') + '</p>' +
+    (left > 0 ? '<a class="btn primary xl" href="#play/' + l.id + '">Продолжить занятие</a>' : '') +
+    '<a class="btn ghost full" href="#lesson/' + l.id + '">К правилу и словам</a>' +
+    '<a class="btn ghost full" href="#course">На главную</a>' +
+    '</div></div>';
+}
+
 function exCard(ex, onAnswer, restore, once){
   const div = document.createElement('div');
   const finished = !!(restore && restore.ok);
   let locked = finished || (!!once && !!restore);
   div.className = 'ex';
   if (ex.guide) div.innerHTML += '<div class="test-guide">' + esc(ex.guide) + '</div>';
+  else if (ex.group) div.innerHTML += '<div class="test-guide">' + esc(ex.group) + '</div>';
   div.innerHTML += '<p class="q">' + esc(ex.q) + '</p>';
   if (ex.audio) div.innerHTML += audioButton(ex.audio, 'Слушать фразу');
 
@@ -450,23 +668,15 @@ function refreshStreak(){
 /* ---------- Мерфи: страницы книги ---------- */
 function murphyBlock(l){
   const m = l.murphy, n = l.unit;
-  let html = '<h2>Мерфи: Unit ' + n + '</h2>' +
-    '<p class="muted small">Страницы ' + esc(m.pages) + ' твоего издания. Тапни по странице, чтобы открыть крупно.</p>' +
-    '<div class="card"><a href="' + m.theory + '" target="_blank" rel="noopener">' +
-    '<img class="page" src="' + m.theory + '" alt="Murphy Unit ' + n + ', страница правила"></a></div>';
-
-  html += '<h3 id="s-homework">Домашка по книге</h3>' +
-    '<p class="muted small">Упражнения на странице ' + esc(m.exPage) + '. Пиши ответы здесь, потом сверься с ключом.</p>' +
-    '<div class="card"><a href="' + m.ex + '" target="_blank" rel="noopener">' +
-    '<img class="page" src="' + m.ex + '" alt="Упражнения Unit ' + n + '"></a></div>' +
-    '<div class="card"><div class="muted small" style="margin-bottom:6px">Мои ответы</div>' +
-    '<textarea id="mAns" rows="6" placeholder="1.1  she\'s …"></textarea>' +
-    '<div class="row" style="margin-top:8px"><button class="btn" id="mKey">Показать ключ</button>' +
-    '<span class="muted small" id="mSaved"></span></div>' +
-    '<div id="keyWrap" style="display:none;margin-top:10px">' +
-    m.key.map(k => '<a href="' + k + '" target="_blank" rel="noopener"><img class="page" style="margin-bottom:8px" src="' + k + '" alt="Ключ с ответами"></a>').join('') +
-    '</div></div>';
-  return html;
+  return '<h2 id="s-book">Страницы книги</h2>' +
+    '<p class="muted small">Сканы твоего издания. Для проверки и повторения; основные задания — в занятии.</p>' +
+    '<div class="card book-card"><details class="book-details">' +
+    '<summary>Открыть Unit ' + n + ': страницы ' + esc(m.pages) + ' и ключ</summary>' +
+    '<div class="book-images">' +
+    '<a href="' + m.theory + '" target="_blank" rel="noopener"><img class="page" src="' + m.theory + '" alt="Murphy Unit ' + n + ', страница правила"></a>' +
+    '<a href="' + m.ex + '" target="_blank" rel="noopener"><img class="page" src="' + m.ex + '" alt="Упражнения Unit ' + n + '"></a>' +
+    m.key.map(k => '<a href="' + k + '" target="_blank" rel="noopener"><img class="page" src="' + k + '" alt="Ключ с ответами"></a>').join('') +
+    '</div></details></div>';
 }
 
 function wireMurphy(l){
@@ -605,10 +815,22 @@ function renderProgress(){
   const doneLessons = Object.keys(S.done || {}).length;
   const acc = answered ? Math.round(right*100/answered) : 0;
 
+  const totals = LESSONS.reduce((a, l) => {
+    a.total += lessonTotal(l);
+    a.done += Object.keys(S.answers[l.id] || {}).length;
+    return a;
+  }, { total:0, done:0 });
+  const overall = totals.total ? Math.min(100, Math.round(totals.done * 100 / totals.total)) : 0;
+
   let html = '<h1>Прогресс</h1><div class="kpi">' +
     '<div><b>' + streak() + '</b><span>дней подряд</span></div>' +
     '<div><b>' + doneLessons + '</b><span>уроков</span></div>' +
     '<div><b>' + acc + '%</b><span>верных</span></div></div>';
+
+  html += '<div class="card overall-card"><div class="row"><b>Весь курс</b>' +
+    '<span class="badge">' + overall + '%</span></div>' +
+    '<div class="bar"><i style="width:' + overall + '%"></i></div>' +
+    '<p class="muted small">' + Math.min(totals.done, totals.total) + ' из ' + totals.total + ' заданий в Unit 1–4.</p></div>';
 
   html += '<h2>Последние 14 дней</h2><div class="grid14">';
   for (let i = 13; i >= 0; i--){
@@ -621,9 +843,11 @@ function renderProgress(){
   html += '<h2>Уроки</h2>';
   LESSONS.forEach(l => {
     const sc = lessonScore(l.id);
-    html += '<div class="card"><div class="row"><div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
+    const pct = lessonTotal(l) ? Math.min(100, Math.round((sc ? sc.total : 0) * 100 / lessonTotal(l))) : 0;
+    html += '<div class="card lesson-row"><div class="row"><div><b>Unit ' + l.unit + '. ' + esc(l.title) + '</b>' +
       '<div class="muted small">' + (sc ? sc.ok + ' из ' + sc.total + ' верно' : 'не начат') + '</div></div>' +
-      (S.done[l.id] ? '<span class="badge ok">пройден</span>' : '') + '</div></div>';
+      (S.done[l.id] ? '<span class="badge ok">пройден</span>' : '<a class="badge" href="#play/' + l.id + '">продолжить</a>') + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
   });
 
   if (days.length) html += '<p class="muted small">Занятий всего: ' + days.length + '. Верных ответов: ' + right + ' из ' + answered + '.</p>';
@@ -631,14 +855,16 @@ function renderProgress(){
 }
 
 /* ---------- тест ---------- */
-function renderTest(blockId){
+let TEST = null;
+function buildTestPool(blockId){
   const lessons = LESSONS.filter(l => l.block === blockId);
-  if (!lessons.length){ go('course'); return; }
-  header('Тест');
+  if (!lessons.length) return null;
   const listening = [], written = [], homework = [];
   lessons.forEach(l => {
     l.exercises.forEach(ex => written.push({ ex, lesson:l }));
     (l.listening || []).forEach(ex => listening.push({ ex, lesson:l }));
+    ((window.BOOK_EXERCISES || {})[l.id] || []).forEach(ex =>
+      written.push({ ex:Object.assign({}, ex, { guide:ex.group }), lesson:l }));
     (l.homework || []).forEach(group => group.items.forEach(item => {
       homework.push({
         ex: {
@@ -657,43 +883,118 @@ function renderTest(blockId){
   const listenPart = listening.slice(0, 2);
   const regularPart = listenPart.concat(written.slice(0, regularSize - listenPart.length));
   const homeworkPart = homework.slice(0, TEST_SIZE - regularPart.length);
-  let pool = regularPart.concat(homeworkPart).sort(() => Math.random() - .5);
-
-  let html = '<button class="back" onclick="go(\'course\')">← к курсу</button>' +
-    '<h1>Тест по блоку</h1><p class="muted small">' + pool.length + ' вопросов. Без подсказок, правила не подглядывай.</p>' +
-    '<div class="row"><span class="muted small" id="tProg">0 из ' + pool.length + '</span>' +
-    '<span class="muted small" id="tAcc"></span></div>' +
-    '<div id="exWrap"></div><div id="testEnd"></div>';
+  return regularPart.concat(homeworkPart).sort(() => Math.random() - .5);
+}
+function renderTest(blockId){
+  const pool = buildTestPool(blockId);
+  if (!pool){ go('course'); return; }
+  header('Тест');
+  TEST = { blockId, pool, idx:0, right:0, total:0, checked:false, pick:null };
+  renderTestCard();
+}
+function renderTestCard(){
+  if (!TEST) { go('course'); return; }
+  if (TEST.idx >= TEST.pool.length) return renderTestDone();
+  const item = TEST.pool[TEST.idx], ex = item.ex;
+  const pct = Math.round(TEST.idx * 100 / TEST.pool.length);
+  let html = '<div class="player test-mode">' +
+    '<div class="player-top"><button class="icon-btn" onclick="go(\'course\')" aria-label="Выйти">×</button>' +
+    '<div class="player-progress"><i style="width:' + pct + '%"></i></div>' +
+    '<span class="player-count">' + (TEST.idx + 1) + '/' + TEST.pool.length + '</span></div>' +
+    '<div class="player-body"><span class="eyebrow">Тест блока</span>' +
+    (ex.guide ? '<div class="test-guide">' + esc(ex.guide) + '</div>' : '') +
+    '<h2 class="task-q">' + esc(ex.q) + '</h2>';
+  if (ex.audio){
+    html += '<div class="listen-row">' +
+      '<button class="btn listen-big" data-speak="' + esc(ex.audio) + '">' + SPEAKER_ICON + '<span>Слушать</span></button>' +
+      '<button class="btn ghost" data-speak="' + esc(ex.audio) + '" data-slow="1">Медленно</button></div>';
+  }
+  if (ex.type === 'choice'){
+    html += '<div class="opts play-opts">' + ex.opts.map((o, i) =>
+      '<button class="opt" data-pick="' + i + '">' + esc(o) + '</button>').join('') + '</div>';
+  } else {
+    html += '<input class="play-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' +
+      (ex.audio ? 'запиши услышанное' : 'ответ по-английски') + '">';
+  }
+  html += '<div class="fb play-fb" id="playFb" role="status" aria-live="polite"></div></div>' +
+    '<div class="player-actions"><button class="btn primary xl" id="playCheck">Проверить</button></div></div>';
   $('#view').innerHTML = html;
-  const wrap = $('#exWrap');
-  let right = 0, answered = 0;
-
-  pool.forEach(item => {
-    wrap.appendChild(exCard(item.ex, (ok, given, correct) => {
-      answered++; if (ok) right++;
-      $('#tProg').textContent = answered + ' из ' + pool.length;
-      $('#tAcc').textContent = answered ? Math.round(right*100/answered) + '%' : '';
-      if (!ok){
-        const dup = S.errors.some(e => e.q === item.ex.q && e.date === today());
-        if (!dup) S.errors.unshift({ date: today(), lesson: item.lesson.id, q: item.ex.q, given, correct });
-      }
-      markDay(); save(); refreshStreak();
-      if (answered === pool.length){
-        const pct = Math.round(right*100/pool.length);
-        if (!S.tests) S.tests = {};
-        S.tests[blockId] = { pct, right, total:pool.length, date:today() };
-        save();
-        $('#testEnd').innerHTML = '<div class="card"><div class="muted small">Результат</div>' +
-          '<div class="score">' + pct + '%</div><div>' + right + ' из ' + pool.length + ' верно</div>' +
-          '<p class="muted small">' + (pct >= 80
-            ? 'Тест пройден, результат сохранён на странице курса.'
-            : pct >= 50
-              ? 'Половина сидит. Результат сохранён; повтори слабые уроки и пройди ещё раз.'
-              : 'Рано. Результат сохранён; возвращайся в уроки, тест пока не про тебя.') + '</p>' +
-          '<button class="btn full" onclick="renderTest(\'' + blockId + '\')">Пройти заново</button></div>';
-      }
-    }, null, true));
+  wireAudio($('#view'));
+  const input = $('.play-input');
+  if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') checkTest(); });
+  if (ex.type === 'choice'){
+    document.querySelectorAll('[data-pick]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (TEST.checked) return;
+        document.querySelectorAll('[data-pick]').forEach(b => b.classList.remove('sel'));
+        btn.classList.add('sel');
+        TEST.pick = Number(btn.dataset.pick);
+      });
+    });
+  }
+  $('#playCheck').addEventListener('click', checkTest);
+}
+function checkTest(){
+  if (!TEST || TEST.checked) return;
+  const item = TEST.pool[TEST.idx], ex = item.ex;
+  let ok = false, given = '', correct = '';
+  if (ex.type === 'choice'){
+    if (TEST.pick == null) return;
+    ok = TEST.pick === ex.answer;
+    given = ex.opts[TEST.pick];
+    correct = ex.opts[ex.answer];
+    document.querySelectorAll('[data-pick]').forEach((b, i) => {
+      b.disabled = true;
+      if (i === ex.answer) b.classList.add('good');
+      else if (i === TEST.pick) b.classList.add('bad');
+    });
+  } else {
+    const input = $('.play-input');
+    given = input.value.trim();
+    if (!given) return;
+    ok = (ex.answers || ex.a || []).some(a => norm(a) === norm(given));
+    correct = (ex.answers || ex.a || [])[0] || '';
+    input.disabled = true;
+    input.style.borderColor = ok ? '#2f5540' : '#5a2f2c';
+  }
+  TEST.checked = true;
+  TEST.total++; if (ok) TEST.right++;
+  if (!ok){
+    const dup = S.errors.some(e => e.q === ex.q && e.date === today());
+    if (!dup) S.errors.unshift({ date: today(), lesson:item.lesson.id, q:ex.q, given, correct });
+  }
+  markDay(); save(); refreshStreak();
+  const fb = $('#playFb');
+  fb.className = 'fb play-fb show ' + (ok ? 'ok' : 'no');
+  fb.innerHTML = ok
+    ? '<b>Верно.</b> ' + esc(ex.explain || '')
+    : 'Не так. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
+      (ex.explain ? '<br>' + esc(ex.explain) : '');
+  const actions = document.querySelector('.player-actions');
+  actions.innerHTML = '<button class="btn primary xl" id="playNext">' +
+    (TEST.idx + 1 >= TEST.pool.length ? 'Показать результат' : 'Дальше') + '</button>';
+  $('#playNext').addEventListener('click', () => {
+    TEST.idx++; TEST.checked = false; TEST.pick = null; renderTestCard();
   });
+  $('#playNext').focus();
+}
+function renderTestDone(){
+  const pct = Math.round(TEST.right * 100 / TEST.pool.length);
+  if (!S.tests) S.tests = {};
+  S.tests[TEST.blockId] = { pct, right:TEST.right, total:TEST.pool.length, date:today() };
+  save();
+  $('#view').innerHTML = '<div class="player done"><div class="done-card">' +
+    '<div class="done-badge">' + (pct >= 80 ? '✓' : '!') + '</div>' +
+    '<h2 class="done-title">Тест блока</h2>' +
+    '<div class="done-score">' + pct + '%</div>' +
+    '<p class="muted">' + TEST.right + ' из ' + TEST.pool.length + ' верно</p>' +
+    '<p class="small muted">' + (pct >= 80
+      ? 'Порог взят: 80% или выше. Результат сохранён на главной.'
+      : 'Нужно 80%. Результат сохранён; повтори ошибки и пройди тест ещё раз.') + '</p>' +
+    '<button class="btn primary xl" onclick="renderTest(\'' + TEST.blockId + '\')">Пройти заново</button>' +
+    '<a class="btn ghost full" href="#errors">Разобрать ошибки</a>' +
+    '<a class="btn ghost full" href="#course">На главную</a>' +
+    '</div></div>';
 }
 
 /* ---------- офлайн ---------- */
@@ -701,6 +1002,12 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 prepareVoices();
+loadAudioIndex();
+LESSONS.forEach(l => {
+  const sc = lessonScore(l.id);
+  if (S.done[l.id] && (!sc || sc.total < lessonTotal(l) || sc.pct < 80)) delete S.done[l.id];
+});
+save();
 
 /* старт */
 route();
