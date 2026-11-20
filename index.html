@@ -33,6 +33,7 @@
 
 <script src="data.js?v=5"></script>
 <script src="exercises.js?v=1"></script>
+<script src="theory.js?v=1"></script>
 <script>
 /* ---------- хранилище ---------- */
 const KEY = 'en_app_v1';
@@ -283,7 +284,7 @@ function renderCourse(){
 }
 
 function theoryHtml(l){
-  const theory = l.sections || l.theory || [];
+  const theory = (window.THEORY_EXTRA && window.THEORY_EXTRA[l.id]) || l.sections || l.theory || [];
   let html = '';
   theory.forEach(t => {
     if (t.h) html += '<h2>' + esc(t.h) + '</h2>';
@@ -308,21 +309,15 @@ function renderLesson(id){
     '<a class="btn primary xl lesson-start" href="#play/' + l.id + '">Начать занятие</a>';
 
   html += '<div class="chips">' +
-    (l.murphy ? '<a class="chip" href="#s-book">Книга</a>' : '') +
+    '<a class="chip" href="#s-notes">Правило</a>' +
+    '<a class="chip" href="#s-words">Слова</a>' +
     (l.listening && l.listening.length ? '<a class="chip" href="#s-listening">Слушаем</a>' : '') +
     (bookItems(l) ? '<a class="chip" href="#s-bookwork">Практика</a>' : '') +
     (l.homework ? '<a class="chip" href="#s-trainer">Тренажёр</a>' : '') +
-    '<a class="chip" href="#s-words">Слова</a>' +
-    '<a class="chip" href="#s-extra">Дополнительно</a></div>';
-
-  if (l.murphy) html += murphyBlock(l);
+    '<a class="chip" href="#s-extra">Дополнительно</a>' +
+    (l.murphy ? '<a class="chip" href="#s-book">Книга</a>' : '') + '</div>';
 
   html += '<div id="s-notes">' + theoryHtml(l) + '</div>';
-
-  if (l.listening && l.listening.length){
-    html += '<h2 id="s-listening">Аудирование</h2><p class="muted small">Сначала нажми «Слушать», не подглядывай в английскую фразу и выбери перевод. Можно переслушать.</p>' +
-      '<div id="listenWrap"></div>';
-  }
 
   html += '<h3 id="s-words">Слова урока</h3><div class="card">' + l.words.map(w =>
     '<div class="word"><div class="row"><div><span class="w">' + esc(w.w) + '</span><div class="tr">' + esc(w.tr) + '</div></div>' +
@@ -333,7 +328,10 @@ function renderLesson(id){
     '<div class="word"><div class="row"><span class="phrase">' + esc(e.en) + '</span>' + audioButton(e.en, 'Слушать фразу', true) + '</div>' +
     '<div class="ex2 muted">' + esc(e.ru) + '</div></div>').join('') + '</div>';
 
-  if (l.homework) html += trainerBlock(l);
+  if (l.listening && l.listening.length){
+    html += '<h2 id="s-listening">Аудирование</h2><p class="muted small">Сначала нажми «Слушать», не подглядывай в английскую фразу и выбери перевод. Можно переслушать.</p>' +
+      '<div id="listenWrap"></div>';
+  }
 
   if (bookItems(l)){
     html += '<h2 id="s-bookwork">Практика по юниту</h2>' +
@@ -341,10 +339,13 @@ function renderLesson(id){
       '<div id="bookWrap"></div>';
   }
 
+  if (l.homework) html += trainerBlock(l);
+
   html += '<h2 id="s-extra">Дополнительно</h2><p class="muted small">Мои упражнения на те же темы. Пиши полностью, без сокращений.</p>';
   html += '<div id="exWrap"></div>';
   html += '<div id="trainWrap"></div>';
   html += '<div id="lessonEnd"></div>';
+  if (l.murphy) html += murphyBlock(l);
   $('#view').innerHTML = html;
   wireAudio($('#view'));
 
@@ -428,6 +429,15 @@ function buildQueue(l){
   return q;
 }
 const SESSION_SIZE = 8;
+const MAX_TRIES = 5;
+function hintFor(correct, attempt){
+  const words = String(correct || '').trim().split(/\s+/).filter(Boolean);
+  if (attempt === 2) return 'Слов в ответе: ' + words.length + '. Первое начинается на «' +
+    (words[0] || '').slice(0,1).toUpperCase() + '».';
+  if (attempt === 3) return 'Начало ответа: «' + cap(words.slice(0,2).join(' ')) + '…».';
+  if (attempt === 4) return 'Последняя попытка. Проверь порядок слов и форму глагола.';
+  return '';
+}
 function renderPlay(id){
   const l = lessonById(id);
   if (!l){ go('course'); return; }
@@ -436,7 +446,7 @@ function renderPlay(id){
   const unanswered = all.filter(it => !(S.answers[l.id] && S.answers[l.id][it.key] !== undefined));
   const queue = (unanswered.length ? unanswered : all).slice(0, SESSION_SIZE);
   header('Unit ' + l.unit);
-  PLAY = { l, queue, all, idx:0, right:0, total:0, checked:false, pick:null };
+  PLAY = { l, queue, all, idx:0, right:0, total:0, attempts:0, resolved:false, pick:null };
   renderPlayCard();
 }
 function playProgress(l, queue){
@@ -478,7 +488,7 @@ function renderPlayCard(){
   if (ex.type === 'choice'){
     document.querySelectorAll('[data-pick]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (PLAY.checked) return;
+        if (PLAY.resolved) return;
         document.querySelectorAll('[data-pick]').forEach(b => b.classList.remove('sel'));
         btn.classList.add('sel');
         PLAY.pick = Number(btn.dataset.pick);
@@ -487,7 +497,7 @@ function renderPlayCard(){
   }
   $('#playCheck').addEventListener('click', checkPlay);
   $('#playSkip').addEventListener('click', () => {
-    PLAY.idx++; PLAY.checked = false; PLAY.pick = null; renderPlayCard();
+    PLAY.idx++; PLAY.attempts = 0; PLAY.resolved = false; PLAY.pick = null; renderPlayCard();
   });
 }
 function showRule(){
@@ -503,42 +513,60 @@ function showRule(){
   document.body.appendChild(sheet);
 }
 function checkPlay(){
-  if (!PLAY || PLAY.checked) return;
+  if (!PLAY || PLAY.resolved) return;
   const item = PLAY.queue[PLAY.idx], ex = item.ex;
   let ok = false, given = '', correct = '';
   if (ex.type === 'choice'){
     if (PLAY.pick == null) return;
-    ok = PLAY.pick === ex.answer;
     given = ex.opts[PLAY.pick];
     correct = ex.opts[ex.answer];
-    document.querySelectorAll('[data-pick]').forEach((b, i) => {
-      b.disabled = true;
-      if (i === ex.answer) b.classList.add('good');
-      else if (i === PLAY.pick) b.classList.add('bad');
-    });
+    ok = PLAY.pick === ex.answer;
+    if (!ok){
+      const chosen = document.querySelectorAll('[data-pick]')[PLAY.pick];
+      if (chosen){ chosen.disabled = true; chosen.classList.add('bad'); }
+      PLAY.pick = null;
+    }
   } else {
     const input = $('.play-input');
     given = input.value.trim();
     if (!given) return;
     ok = (ex.answers || ex.a || []).some(a => norm(a) === norm(given));
     correct = (ex.answers || ex.a || [])[0] || '';
-    input.disabled = true;
-    input.style.borderColor = ok ? '#2f5540' : '#5a2f2c';
+    if (!ok) input.style.borderColor = '#5a2f2c';
   }
-  PLAY.checked = true;
+  if (ok) return resolvePlay(item, ex, given, correct, true);
+  PLAY.attempts++;
+  if (PLAY.attempts < MAX_TRIES){
+    const fb = $('#playFb');
+    fb.className = 'fb play-fb show no';
+    const hint = ex.type === 'choice' ? 'Этот вариант не подходит. Попробуй другой.' : hintFor(correct, PLAY.attempts);
+    fb.innerHTML = '<b>Пока не так.</b> Попытка ' + PLAY.attempts + ' из ' + MAX_TRIES + '.' +
+      (hint ? '<br>' + esc(hint) : '');
+    return;
+  }
+  resolvePlay(item, ex, given, correct, false);
+}
+function resolvePlay(item, ex, given, correct, ok){
+  PLAY.resolved = true;
+  document.querySelectorAll('[data-pick]').forEach((b, i) => {
+    b.disabled = true;
+    if (i === ex.answer) b.classList.add('good');
+  });
+  const input = $('.play-input');
+  if (input) input.disabled = true;
   PLAY.total++; if (ok) PLAY.right++;
   markAnswer(PLAY.l.id, item.key, ok, ex.q, given, correct);
   const fb = $('#playFb');
   fb.className = 'fb play-fb show ' + (ok ? 'ok' : 'no');
   fb.innerHTML = ok
     ? '<b>Верно.</b> ' + esc(ex.explain || ex.sample || '')
-    : 'Не так. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
+    : 'Попытки закончились. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
       (ex.explain ? '<br>' + esc(ex.explain) : '');
   const actions = document.querySelector('.player-actions');
   actions.innerHTML = '<button class="btn primary xl" id="playNext">' +
     (PLAY.idx + 1 >= PLAY.queue.length ? 'Завершить' : 'Дальше') + '</button>';
   $('#playNext').addEventListener('click', () => {
-    PLAY.idx++; PLAY.checked = false; PLAY.pick = null; renderPlayCard();
+    PLAY.idx++; PLAY.attempts = 0; PLAY.resolved = false; PLAY.pick = null; renderPlayCard();
   });
   $('#playNext').focus();
 }
@@ -561,8 +589,8 @@ function renderPlayDone(){
 
 function exCard(ex, onAnswer, restore, once){
   const div = document.createElement('div');
-  const finished = !!(restore && restore.ok);
-  let locked = finished || (!!once && !!restore);
+  let resolved = !!restore;
+  let attempts = 0;
   div.className = 'ex';
   if (ex.guide) div.innerHTML += '<div class="test-guide">' + esc(ex.guide) + '</div>';
   else if (ex.group) div.innerHTML += '<div class="test-guide">' + esc(ex.group) + '</div>';
@@ -575,21 +603,42 @@ function exCard(ex, onAnswer, restore, once){
       '</div><div class="fb"></div>';
     div.querySelectorAll('.opt').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (locked) return;
-        locked = true;
+        if (resolved) return;
         const i = Number(btn.dataset.i), right = i === ex.answer;
-        div.querySelectorAll('.opt').forEach(b => { b.classList.remove('sel'); b.disabled = true; });
-        btn.classList.add(right ? 'good' : 'bad');
-        if (!right) div.querySelectorAll('.opt')[ex.answer].classList.add('good');
-        showFb(div, right, ex.opts[ex.answer], ex.explain);
-        onAnswer(right, ex.opts[i], ex.opts[ex.answer]);
+        div.querySelectorAll('.opt').forEach(b => b.classList.remove('sel'));
+        btn.classList.add('sel');
+        if (right){
+          resolved = true;
+          div.querySelectorAll('.opt').forEach(b => { b.disabled = true; });
+          btn.classList.remove('sel');
+          btn.classList.add('good');
+          showFb(div, true, ex.opts[ex.answer], ex.explain);
+          onAnswer(true, ex.opts[i], ex.opts[ex.answer]);
+          return;
+        }
+        attempts++;
+        btn.disabled = true;
+        btn.classList.remove('sel');
+        btn.classList.add('bad');
+        if (attempts >= MAX_TRIES){
+          resolved = true;
+          div.querySelectorAll('.opt').forEach(b => { b.disabled = true; });
+          div.querySelectorAll('.opt')[ex.answer].classList.add('good');
+          showFb(div, false, ex.opts[ex.answer], ex.explain);
+          onAnswer(false, ex.opts[i], ex.opts[ex.answer]);
+        } else {
+          const fb = div.querySelector('.fb');
+          fb.className = 'fb show no';
+          fb.innerHTML = '<b>Пока не так.</b> Попытка ' + attempts + ' из ' + MAX_TRIES +
+            '.<br>Этот вариант не подходит. Попробуй другой.';
+        }
       });
     });
     if (restore && restore.given){
       const i = ex.opts.findIndex(o => norm(o) === norm(restore.given));
       if (i >= 0){
         const buttons = Array.from(div.querySelectorAll('.opt'));
-        buttons.forEach(b => { b.disabled = locked; });
+        buttons.forEach(b => { b.disabled = true; });
         buttons[i].classList.add(i === ex.answer ? 'good' : 'bad');
         if (i !== ex.answer) buttons[ex.answer].classList.add('good');
         showFb(div, restore.ok, ex.opts[ex.answer], ex.explain);
@@ -604,19 +653,37 @@ function exCard(ex, onAnswer, restore, once){
     '<div class="row" style="margin-top:8px"><button class="btn primary check-btn">Проверить</button></div><div class="fb"></div>';
   const inp = div.querySelector('input');
   const check = () => {
-    if (locked) return;
+    if (resolved) return;
     const val = inp.value.trim();
     if (!val) return;
     const ok = ex.answers.some(a => norm(a) === norm(val));
-    locked = true;
-    inp.style.borderColor = ok ? '#2e4a3a' : '#4a2e2e';
-    showFb(div, ok, ex.answers[0], ex.explain);
-    onAnswer(ok, val, ex.answers[0]);
+    if (ok){
+      resolved = true;
+      inp.disabled = true;
+      inp.style.borderColor = '#2e4a3a';
+      showFb(div, true, ex.answers[0], ex.explain);
+      onAnswer(true, val, ex.answers[0]);
+      return;
+    }
+    attempts++;
+    inp.style.borderColor = '#4a2e2e';
+    if (attempts >= MAX_TRIES){
+      resolved = true;
+      inp.disabled = true;
+      showFb(div, false, ex.answers[0], ex.explain);
+      onAnswer(false, val, ex.answers[0]);
+    } else {
+      const fb = div.querySelector('.fb');
+      fb.className = 'fb show no';
+      fb.innerHTML = '<b>Пока не так.</b> Попытка ' + attempts + ' из ' + MAX_TRIES + '.' +
+        (hintFor(ex.answers[0], attempts) ? '<br>' + esc(hintFor(ex.answers[0], attempts)) : '');
+    }
   };
   div.querySelector('.check-btn').addEventListener('click', check);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
   if (restore && restore.given){
     inp.value = restore.given;
+    inp.disabled = true;
     inp.style.borderColor = restore.ok ? '#2e4a3a' : '#4a2e2e';
     showFb(div, restore.ok, ex.answers[0], ex.explain);
   }
@@ -730,31 +797,69 @@ function wireTrainer(l){
       const inp = row.querySelector('input');
       const mark = row.querySelector('.mark');
       const fb = row.querySelector('.fb');
+      let resolved = false, attempts = 0;
+      const showMark = (ok) => {
+        mark.textContent = ok ? '✓' : '✕';
+        mark.style.color = ok ? 'var(--accent)' : 'var(--bad)';
+      };
       const check = (silent) => {
+        if (resolved && !silent) return;
         const v = inp.value.trim();
         if (!v) return;
         const ok = it.a.some(x => norm(x) === norm(v));
         inp.style.borderColor = ok ? '#2e4a3a' : '#4a2e2e';
-        mark.textContent = ok ? '✓' : '✕';
-        mark.style.color = ok ? 'var(--accent)' : 'var(--bad)';
-        if (!ok){
-          fb.className = 'fb show no';
-          fb.innerHTML = 'Верно: <span class="corr">' + esc(cap(it.a[0])) + '</span>';
-        } else if (it.sample){
-          fb.className = 'fb show ok';
-          fb.innerHTML = 'Образец: ' + esc(it.sample);
-        } else {
-          fb.className = 'fb';
+        if (silent){
+          resolved = true;
+          inp.disabled = true;
+          showMark(ok);
+          if (!ok){
+            fb.className = 'fb show no';
+            fb.innerHTML = 'Верно: <span class="corr">' + esc(cap(it.a[0])) + '</span>';
+          } else if (it.sample){
+            fb.className = 'fb show ok';
+            fb.innerHTML = 'Образец: ' + esc(it.sample);
+          }
+          marks[ii] = ok;
+          const restoredDone = marks.filter(Boolean).length;
+          if (badge){
+            badge.textContent = restoredDone + ' из ' + blk.items.length;
+            badge.className = 'badge' + (restoredDone === blk.items.length ? ' ok' : '');
+          }
+          return;
         }
-        marks[ii] = ok;
-        const done = marks.filter(Boolean).length;
-        if (badge){
-          badge.textContent = done + ' из ' + blk.items.length;
-          badge.className = 'badge' + (done === blk.items.length ? ' ok' : '');
-        }
-        if (!silent){
-          markAnswer(l.id, key, ok, it.q, v, it.a[0]);
+        if (ok){
+          resolved = true;
+          inp.disabled = true;
+          showMark(true);
+          marks[ii] = true;
+          const done = marks.filter(Boolean).length;
+          if (badge){
+            badge.textContent = done + ' из ' + blk.items.length;
+            badge.className = 'badge' + (done === blk.items.length ? ' ok' : '');
+          }
+          if (it.sample){
+            fb.className = 'fb show ok';
+            fb.innerHTML = 'Образец: ' + esc(it.sample);
+          } else {
+            fb.className = 'fb';
+          }
+          markAnswer(l.id, key, true, it.q, v, it.a[0]);
           refreshLessonEnd(l);
+          return;
+        }
+        attempts++;
+        showMark(false);
+        if (attempts >= MAX_TRIES){
+          resolved = true;
+          inp.disabled = true;
+          fb.className = 'fb show no';
+          fb.innerHTML = 'Попытки закончились. Верно: <span class="corr">' + esc(cap(it.a[0])) + '</span>';
+          markAnswer(l.id, key, false, it.q, v, it.a[0]);
+          refreshLessonEnd(l);
+        } else {
+          fb.className = 'fb show no';
+          fb.innerHTML = '<b>Пока не так.</b> Попытка ' + attempts + ' из ' + MAX_TRIES + '.' +
+            (hintFor(it.a[0], attempts) ? '<br>' + esc(hintFor(it.a[0], attempts)) : '');
         }
       };
       row.querySelector('.btn').addEventListener('click', () => check(false));
@@ -889,7 +994,7 @@ function renderTest(blockId){
   const pool = buildTestPool(blockId);
   if (!pool){ go('course'); return; }
   header('Тест');
-  TEST = { blockId, pool, idx:0, right:0, total:0, checked:false, pick:null };
+  TEST = { blockId, pool, idx:0, right:0, total:0, attempts:0, firstTry:true, resolved:false, pick:null };
   renderTestCard();
 }
 function renderTestCard(){
@@ -925,7 +1030,7 @@ function renderTestCard(){
   if (ex.type === 'choice'){
     document.querySelectorAll('[data-pick]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (TEST.checked) return;
+        if (TEST.resolved) return;
         document.querySelectorAll('[data-pick]').forEach(b => b.classList.remove('sel'));
         btn.classList.add('sel');
         TEST.pick = Number(btn.dataset.pick);
@@ -935,30 +1040,50 @@ function renderTestCard(){
   $('#playCheck').addEventListener('click', checkTest);
 }
 function checkTest(){
-  if (!TEST || TEST.checked) return;
+  if (!TEST || TEST.resolved) return;
   const item = TEST.pool[TEST.idx], ex = item.ex;
   let ok = false, given = '', correct = '';
   if (ex.type === 'choice'){
     if (TEST.pick == null) return;
-    ok = TEST.pick === ex.answer;
     given = ex.opts[TEST.pick];
     correct = ex.opts[ex.answer];
-    document.querySelectorAll('[data-pick]').forEach((b, i) => {
-      b.disabled = true;
-      if (i === ex.answer) b.classList.add('good');
-      else if (i === TEST.pick) b.classList.add('bad');
-    });
+    ok = TEST.pick === ex.answer;
+    if (!ok){
+      const chosen = document.querySelectorAll('[data-pick]')[TEST.pick];
+      if (chosen){ chosen.disabled = true; chosen.classList.add('bad'); }
+      TEST.pick = null;
+    }
   } else {
     const input = $('.play-input');
     given = input.value.trim();
     if (!given) return;
     ok = (ex.answers || ex.a || []).some(a => norm(a) === norm(given));
     correct = (ex.answers || ex.a || [])[0] || '';
-    input.disabled = true;
-    input.style.borderColor = ok ? '#2f5540' : '#5a2f2c';
+    if (!ok) input.style.borderColor = '#5a2f2c';
   }
-  TEST.checked = true;
-  TEST.total++; if (ok) TEST.right++;
+  if (ok) return resolveTest(item, ex, given, correct, true);
+  TEST.attempts++;
+  TEST.firstTry = false;
+  if (TEST.attempts < MAX_TRIES){
+    const fb = $('#playFb');
+    fb.className = 'fb play-fb show no';
+    const hint = ex.type === 'choice' ? 'Этот вариант не подходит. Попробуй другой.' : hintFor(correct, TEST.attempts);
+    fb.innerHTML = '<b>Пока не так.</b> Попытка ' + TEST.attempts + ' из ' + MAX_TRIES + '.' +
+      (hint ? '<br>' + esc(hint) : '');
+    return;
+  }
+  resolveTest(item, ex, given, correct, false);
+}
+function resolveTest(item, ex, given, correct, ok){
+  TEST.resolved = true;
+  document.querySelectorAll('[data-pick]').forEach((b, i) => {
+    b.disabled = true;
+    if (i === ex.answer) b.classList.add('good');
+  });
+  const input = $('.play-input');
+  if (input) input.disabled = true;
+  TEST.total++;
+  if (ok && TEST.firstTry) TEST.right++;
   if (!ok){
     const dup = S.errors.some(e => e.q === ex.q && e.date === today());
     if (!dup) S.errors.unshift({ date: today(), lesson:item.lesson.id, q:ex.q, given, correct });
@@ -967,14 +1092,14 @@ function checkTest(){
   const fb = $('#playFb');
   fb.className = 'fb play-fb show ' + (ok ? 'ok' : 'no');
   fb.innerHTML = ok
-    ? '<b>Верно.</b> ' + esc(ex.explain || '')
-    : 'Не так. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
+    ? '<b>Верно.</b> ' + (TEST.firstTry ? '' : 'Но с подсказками — в зачёт не идёт. ') + esc(ex.explain || '')
+    : 'Попытки закончились. Правильно: <span class="corr">' + esc(cap(correct)) + '</span>' +
       (ex.explain ? '<br>' + esc(ex.explain) : '');
   const actions = document.querySelector('.player-actions');
   actions.innerHTML = '<button class="btn primary xl" id="playNext">' +
     (TEST.idx + 1 >= TEST.pool.length ? 'Показать результат' : 'Дальше') + '</button>';
   $('#playNext').addEventListener('click', () => {
-    TEST.idx++; TEST.checked = false; TEST.pick = null; renderTestCard();
+    TEST.idx++; TEST.attempts = 0; TEST.firstTry = true; TEST.resolved = false; TEST.pick = null; renderTestCard();
   });
   $('#playNext').focus();
 }
